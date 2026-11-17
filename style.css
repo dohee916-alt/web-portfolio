@@ -109,3 +109,15 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #scene .anchor.picked.absorbed{opacity:0!important}
 #scene .anchor.picked span,#scene .anchor.picked b{opacity:0}
 #scene[data-phase=opening] #curve,#scene[data-phase=closing] #curve{opacity:.75}
+
+/* Impact launches the visible anchor; no prolonged card/dot attachment. */
+#layers .anchor{transform:translate(calc(-50% + var(--fly-x,0px)),var(--bump,0px))}
+#layers .anchor:before{transform:translateX(-50%) scale(1,var(--dot-stretch,1))}
+#scene[data-phase=opening] .anchor.picked:before{box-shadow:none}
+#detail.morphing{border:1.5px solid #4389b3;background:linear-gradient(145deg,#f6fcfff5,#dcecf6ee)}
+#detail.content-ready,#detail.visible{border-color:#ffffffd9}
+#detail>*{transition:none!important;transform-origin:var(--origin-x,0px) var(--origin-y,0px);opacity:0;}
+#detail.content-ready>*{opacity:var(--reveal,0);transform:translateY(calc((1 - var(--reveal,0))*24px));}
+#detail.content-ready #projectTitle{opacity:clamp(0,calc(var(--reveal,0)*1.35 - .12),1)}
+#detail.content-ready #projectDesc{opacity:clamp(0,calc(var(--reveal,0)*1.65 - .42),1)}
+#detail.content-ready #placeholder{opacity:clamp(0,calc(var(--reveal,0)*2 - .85),1)}

@@ -24,7 +24,7 @@ items.forEach((p,i)=>{
    gallery (damped continuous navigation), radial-gallery (spatial picking).
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
-const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1580,CLOSE_MS=850;const HIT=.30,PUSH=.51;let closeFrom=1;
+const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1;
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
  const rows=64, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
@@ -74,11 +74,16 @@ function anchorAt(i,m,f=focus){
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
 function topCenter(p,m){const ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,a=m.h*p.scale*Math.sin(rz),b=-m.h*p.scale*Math.cos(rz);const z=p.z-a*Math.sin(ry);const v=project(p.x+a*Math.cos(ry),p.y+b,z,m);return {x:v[0],y:v[1]}}
 function alignTop(p,m,i,x,y){const e=topCenter(p,m),ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,z=p.z-m.h*p.scale*Math.sin(rz)*Math.sin(ry),camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);p.x+=(x-e.x)/k;p.y+=(y-e.y)/k;return p}
-// The upper edge is aligned to the bottom of the SAME moving circle.
-function pushDistance(m){return Math.min(m.viewportH*.115,98)}
-function dotTravel(u,m){return pushDistance(m)*ease(clamp((u-HIT)/(PUSH-HIT)))}
-function currentDot(u,m){return {x:impactAnchor.x,y:impactAnchor.y+5-dotTravel(u,m)}}
-
+// A single impact transfers velocity to the circle. It flies independently.
+function flight(u,m){
+ const t=clamp((u-HIT)/(PUSH-HIT)),s=1-Math.pow(1-t,3);
+ const y0=impactAnchor.y+5, room=y0+m.topInset-38;
+ const rise=Math.max(0,Math.min(m.viewportH*.19,155,room));
+ const dx=clamp(m.W*.065,24,90);
+ const sign=impactAnchor.x>m.W*.80?-1:1;
+ return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s+Math.sin(Math.PI*t)*-Math.min(12,rise*.08)};
+}
+function currentDot(u,m){return flight(u,m)}
 function archivePose(i,m,f=focus,amount=1){
  const d=i-f,t=i/Math.max(1,N-1),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
  const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):1,scale:size};
@@ -91,10 +96,16 @@ function panelTarget(m){
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
 function renderPanel(m,u){
  if(!impactAnchor||u<PUSH){detail.classList.remove('morphing','visible','content-ready');return}
- const t=ease(clamp((u-PUSH)/(0.89-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(u,m);
- const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t),w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,t);
+ const t=ease(clamp((u-PUSH)/(.94-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(PUSH,m);
+ // Keep the launch point inside the growing surface: first open the mouth,
+ // then unfurl the entire reading area from that point.
+ const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,ease(clamp((u-PUSH-.025)/(.92-PUSH-.025))));
+ const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
  detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,20,t)+'px';
- detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.78);detail.classList.toggle('visible',phase==='detail');
+ const ox=clamp(dot.x-x,0,w),oy=clamp(dot.y+m.topInset-y,0,h);
+ detail.style.setProperty('--origin-x',ox+'px');detail.style.setProperty('--origin-y',oy+'px');
+ detail.style.setProperty('--reveal',String(ease(clamp((u-.56)/.38))));
+ detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.58);detail.classList.toggle('visible',phase==='detail');
 }
 function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return o}
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
@@ -124,16 +135,13 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
      const start=impactPose||p;
      const contact=alignTop({...start},m,i,hit.x,hit.y+12);
      if(u<HIT){
-      // Accelerate into contact, rather than easing to a stop before the hit.
-      const q=clamp(u/HIT);p=between(start,contact,q*q);
-     }else if(u<PUSH){
-      const dot=currentDot(u,m),q=ease((u-HIT)/(PUSH-HIT));
-      p=alignTop({...contact,z:contact.z+30*q},m,i,dot.x,dot.y+7);
+      const q=clamp(u/HIT);p=between(start,contact,q*q*q);
      }else{
-      const dot=currentDot(PUSH,m);
-      const pushed=alignTop({...contact,z:contact.z+30},m,i,dot.x,dot.y+7);
+      // Recoil, then peel away: the dot has its own much faster trajectory.
+      const t=clamp((u-HIT)/(1-HIT)),q=1-Math.pow(1-t,3);
       const dest={...p,x:m.W*(mobile()?.5:.27),y:m.viewportH*(mobile()?.48:.78)-m.topInset,z:120,ry:-13,rz:-7,scale:mobile()?1.10:1.26,opacity:1};
-      p=between(pushed,dest,ease((u-PUSH)/(1-PUSH)));
+      p=between(contact,dest,q);
+      p.y+=Math.sin(Math.PI*clamp(t/.24))*Math.min(24,m.H*.045)*(t<.24?1:0);
      }
     }else{const q=ease(clamp((u-.24)/.55));p.y-=q*m.viewportH*.035;p.opacity*=1-q*.83}
    }
@@ -141,8 +149,16 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
   a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=mobile()&&Math.abs(i-focus)>1.35?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
-  const u=selected===i&&phase!=='explore'?detailProgress(now):0;const bump=selected===i?-dotTravel(u,m):0;a.classList.toggle('absorbed',selected===i&&u>=PUSH);
-  a.style.setProperty('--bump',bump+'px')
+  const u=selected===i&&phase!=='explore'?detailProgress(now):0;
+  const flying=selected===i&&impactAnchor&&u>=HIT;
+  const dot=flying?currentDot(u,m):null;
+  a.classList.toggle('absorbed',selected===i&&u>=PUSH);
+  a.style.setProperty('--bump',dot?(dot.y-(ay+5))+'px':'0px');
+  a.style.setProperty('--fly-x',dot?(dot.x-ax)+'px':'0px');
+  const squash=flying?1+.32*Math.sin(Math.PI*clamp((u-HIT)/.09)):1;
+  a.style.setProperty('--dot-stretch',String(squash));
+  if(selected===i&&u>=HIT&&u<PUSH){a.style.visibility='visible'}
+
  }
  opticalRender(m);
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);let d='M '+points[0].join(' ');for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],x=(a[0]+b[0])/2;d+=' C '+x+' '+a[1]+' '+x+' '+b[1]+' '+b.join(' ')}path.setAttribute('d',d);
