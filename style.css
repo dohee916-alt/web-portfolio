@@ -128,3 +128,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 
 /* Intro uses the visible stack itself as the start control. */
 #scene[data-phase=intro].intro-card-hover,#scene[data-phase=intro].intro-card-hover #layers{cursor:pointer}
+
+/* Focused card is visually closest; no cursor-driven displacement. */
+#scene[data-phase=explore]{overscroll-behavior:none;touch-action:none}
+#scene[data-phase=explore] .anchor.active:before{box-shadow:0 0 0 5px #559bc344}

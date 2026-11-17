@@ -11,3 +11,9 @@ The implementation in main.js independently adapts the techniques to this portfo
 - https://tympanus.net/codrops/2015/11/24/shazam-like-morphing-button-effect/ — circle-to-content morph sequence.
 - https://tympanus.net/codrops/2026/07/30/building-an-infinite-gsap-scroll-gallery-with-parallax-and-flip-transitions/ — shared-element detail transitions.
 Independent implementation: projected card top edge contacts an anchor on an ascending arc; anchor moves at impact and interpolates its bounds into the information panel. Content is revealed in sequence; closing reverses the shape transition.
+
+## Center-focus navigation
+- https://tympanus.net/codrops/2025/11/11/building-a-3d-infinite-carousel-with-reactive-background-gradients/ — scale and depth by distance from center; wheel and drag input.
+- https://tympanus.net/codrops/2021/02/23/creating-an-infinite-circular-gallery-using-webgl-with-ogl-and-glsl-shaders/ — continuous scroll coordinates and center snapping.
+- https://www.embla-carousel.com/docs/api/options — centered snap and momentum.
+Independent adaptation: finite ascending arc, stronger center depth/size, normalized wheel, predictive mobile snap, flat-card mesh optimization.
