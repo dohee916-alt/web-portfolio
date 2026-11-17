@@ -207,7 +207,7 @@ scene.addEventListener('wheel',e=>{
  if(returning||launchLocked)return;
  if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
  const gallery=phase==='explore';
- let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):e.deltaY;
+ let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):-e.deltaY;
  if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
  const units=clamp(delta/105,-1.5,1.5);
  if(gallery){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
