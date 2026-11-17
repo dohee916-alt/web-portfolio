@@ -139,3 +139,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #scene[data-phase=explore] .anchor.active b{font-weight:600}
 #scene[data-phase=explore] .anchor.active:before{box-shadow:0 0 0 5px #559bc344}
 #scene[data-phase=explore] #curve{stroke-opacity:.65}
+
+/* Compact shared-orientation stack; no wave at each timeline stop. */
+#scene[data-phase=explore] #curve{stroke-opacity:.55;stroke-width:1}
+#scene[data-phase=explore] .anchor:not(.active){opacity:.75}

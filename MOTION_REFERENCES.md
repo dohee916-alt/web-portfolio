@@ -17,3 +17,6 @@ Independent implementation: projected card top edge contacts an anchor on an asc
 - https://tympanus.net/codrops/2021/02/23/creating-an-infinite-circular-gallery-using-webgl-with-ogl-and-glsl-shaders/ — continuous scroll coordinates and center snapping.
 - https://www.embla-carousel.com/docs/api/options — centered snap and momentum.
 Independent adaptation: finite ascending arc, stronger center depth/size, normalized wheel, predictive mobile snap, flat-card mesh optimization.
+
+## Shared orientation stack
+Verified source: https://github.com/codrops/3DStackMotion/blob/main/js/effect-1/stackMotionEffect.js — common group orientation, successive depth offsets. Demo: https://tympanus.net/Development/3DStackMotion/. Adapted to a finite angled arc with parallel planes, modest selected-card displacement, and one quadratic timeline. No third-party code copied.

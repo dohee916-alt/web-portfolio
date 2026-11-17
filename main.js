@@ -36,7 +36,7 @@ function mesh(p,m,i){
  }
  return {i,L,R,p,poly:L.concat(R.slice().reverse())}
 }
-function shape(poly){ctx.beginPath();poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
+function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(10,Math.hypot(q[0]-p[0],q[1]-p[1])*.12),b=Math.min(10,Math.hypot(r[0]-q[0],r[1]-q[1])*.12),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
 function opticalRender(m){
  // Render on the entire scene, not just the lower world layout box.
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.round(m.W*dpr),h=Math.round(m.viewportH*dpr);
@@ -51,7 +51,7 @@ function opticalRender(m){
   g.addColorStop(0,'rgba(239,252,255,.60)');g.addColorStop(.19,'rgba(195,226,243,.20)');g.addColorStop(.48,'rgba(88,145,191,.17)');g.addColorStop(.78,'rgba(225,247,255,.49)');g.addColorStop(1,'rgba(99,158,201,.35)');
   ctx.fillStyle=g;ctx.shadowColor='rgba(45,87,125,.11)';ctx.shadowBlur=16;ctx.shadowOffsetY=8;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   ctx.strokeStyle='rgba(250,255,255,.88)';ctx.lineWidth=1;ctx.stroke();
-  ctx.beginPath();R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(76,117,155,.42)';ctx.lineWidth=1.6;ctx.stroke();
+  ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(76,117,155,.42)';ctx.lineWidth=1.6;ctx.stroke();
   // A broad, continuous highlight follows the curved sheet, without segment seams.
   ctx.save();shape(poly);ctx.clip();const a=L[Math.floor((L.length-1)*.6)],b=R[Math.floor((R.length-1)*.6)];
   const shimmer=ctx.createLinearGradient(a[0]-18,a[1]-35,b[0]+18,b[1]+35);shimmer.addColorStop(0,'#ffffff00');shimmer.addColorStop(.52,'#ffffff31');shimmer.addColorStop(1,'#ffffff00');ctx.fillStyle=shimmer;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();ctx.restore()
@@ -64,13 +64,11 @@ scene.addEventListener('click',e=>{if(phase==='intro'){if(pick(e)>=0)start();ret
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
+// A single continuous arc, shared by the entire stack and its timeline.
 function anchorAt(i,m,f=focus){
- const d=i-f,small=mobile(),abs=Math.abs(d);
- // A continuous, asymmetric perspective arc: wide in front, compressed toward the vanishing end.
- const spacing=small?.35:(d<0?.163:.149);
- const x=m.W*(.5+d*spacing/(1+.10*abs));
- const t=Math.tanh(d/(small?2.1:2.65));
- const y=m.viewportH*(.335-.195*t+.035*t*t)-m.topInset;
+ const d=i-f,small=mobile(),step=small?.27:.088;
+ const x=m.W*(.5+d*step);
+ const t=(x/m.W-.5), y=m.viewportH*(.29-.38*t+.12*t*t)-m.topInset;
  return {x,y};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
@@ -86,20 +84,15 @@ function flight(u,m){
  return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s+Math.sin(Math.PI*t)*-Math.min(12,rise*.08)};
 }
 function currentDot(u,m){return flight(u,m)}
+// Codrops 3DStackMotion: coherent group orientation and successive depth offsets.
+ // Keep the planes parallel, like the supplied blue bank-card reference.
 function archivePose(i,m,f=focus,amount=1){
- const d=i-f,abs=Math.abs(d),small=mobile(),a=anchorAt(i,m,f);
- const emphasis=clamp(lift[i]/100)*amount;
- const spread=1-Math.exp(-abs*.85);
- const depth=(small?110:185)+emphasis*(small?90:130)-spread*(d<0?235:320);
- const yaw=Math.sign(d)*(d<0?48:58)*spread;
- const roll=-7- (d<0?15:8)*spread;
- // Scale in projected screen space, so the central card always reads as the foreground object.
- const camera=Math.max(780,m.W*1.05);
- const perspective=camera/Math.max(180,camera-depth);
- const projectedH=Math.min(m.viewportH*(small?.32:.42),m.h*1.12)*(1-.36*spread)*(1+.07*emphasis);
- const size=projectedH/(m.h*perspective);
- const p={x:a.x,y:a.y+m.h,z:depth,ry:yaw,rz:roll,fall:0,opacity:small?clamp(1-(abs-1.5)*.60):clamp(1-(abs-3.6)*.7),scale:size};
- return alignTop(p,m,i,a.x+(small?7:14)*Math.tanh(d),a.y+(small?56:66)-32*emphasis);
+ const d=i-f,small=mobile(),a=anchorAt(i,m,f),emphasis=clamp(lift[i]/100)*amount;
+ const depth=(small?45:85)+d*(small?18:27)+emphasis*(small?36:48);
+ const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-depth);
+ const projectedH=Math.min(m.viewportH*(small?.34:.48),m.h*1.12)*(1+.025*d);
+ const p={x:a.x,y:a.y+m.h,z:depth,ry:-38,rz:-19,fall:0,opacity:small?clamp(1-(Math.abs(d)-2)*.55):clamp(1-(Math.abs(d)-5)*.65),scale:projectedH/(m.h*k)};
+ return alignTop(p,m,i,a.x,a.y+(small?70:84)-emphasis*(small?42:52));
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -128,7 +121,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='animation'&&(now-startAt)/1000>=LAUNCH_END){setPhase('explore');$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=(now-startAt)/1000;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=true;
- for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?100*Math.exp(-Math.pow(Math.abs(d)/.67,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
+ for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
  let points=[];
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
@@ -160,7 +153,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=Math.abs(i-focus)>(mobile()?1.6:3.9)?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=ax<20||ax>m.W-20?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
@@ -173,7 +166,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
 
  }
  opticalRender(m);
- svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);let d='M '+points[0].join(' ');for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],x=(a[0]+b[0])/2;d+=' C '+x+' '+a[1]+' '+x+' '+b[1]+' '+b.join(' ')}path.setAttribute('d',d);
+ svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.12*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
  $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
