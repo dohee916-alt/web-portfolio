@@ -75,3 +75,28 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 /* Allow the optical surface to extend above the layout world. Logical poses and anchor positions stay unchanged. */
 #world,#layers{overflow:visible}
 #optical-scene{inset:auto;left:0;top:0;max-width:none;max-height:none;}
+
+/* Ascending reference arc, contact dot and shared-element information reveal. */
+#scene[data-phase=opening] #world,#scene[data-phase=detail] #world,#scene[data-phase=closing] #world{animation:none!important;transform:none}
+#scene[data-phase=opening] #curve,#scene[data-phase=detail] #curve,#scene[data-phase=closing] #curve{opacity:.32}
+#curve{stroke:#477d9f;stroke-width:1.25;stroke-opacity:.75}
+#layers .anchor{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,var(--bump,0px));}
+#layers .anchor:before{width:10px;height:10px;border:1.5px solid #4389b3;background:#e7f7ff;border-radius:50%;margin:0 0 9px;box-sizing:border-box;}
+#layers .anchor span,#layers .anchor b{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);white-space:nowrap;margin:0;}
+#layers .anchor span{bottom:calc(100% + 23px);font-size:9px;opacity:.72}
+#layers .anchor b{font-size:11px}
+#scene[data-phase=opening] .anchor.picked,#scene[data-phase=closing] .anchor.picked{animation:none!important;opacity:1}
+#scene .anchor.absorbed{opacity:0!important}
+#detail{inset:auto;margin:0;box-sizing:border-box;overflow:hidden;background:linear-gradient(145deg,#f6fcfff5,#dcecf6ee);border:1px solid #ffffffd9;box-shadow:0 18px 65px #315f7c24;transform:none!important;transition:none!important;padding:0!important;visibility:hidden;opacity:0}
+#detail.morphing{visibility:visible;opacity:1;pointer-events:none}
+#detail.visible{pointer-events:auto;overflow:auto}
+#detail>*{opacity:0;transform:translateY(18px);transition:opacity .32s,transform .48s cubic-bezier(.16,1,.3,1);margin-left:clamp(24px,3vw,52px);margin-right:clamp(24px,3vw,52px)}
+#detail.content-ready>*{opacity:1;transform:translateY(0)}
+#detail.content-ready #projectTitle{transition-delay:.06s}
+#detail.content-ready #projectDesc{transition-delay:.13s}
+#detail.content-ready #placeholder{transition-delay:.20s}
+#detail #close{margin-top:20px;margin-right:22px}
+#detail #category{margin-top:clamp(52px,8vh,90px)}
+#detail #projectTitle{font-size:clamp(28px,4vw,62px);margin-top:14px;margin-bottom:24px}
+#detail #projectDesc{line-height:1.85}
+@media(max-width:600px){#detail #category{margin-top:48px}#detail #projectTitle{font-size:30px;margin-bottom:14px}#detail #projectDesc{font-size:13px}#detail>*{margin-left:24px;margin-right:24px}}
