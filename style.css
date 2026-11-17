@@ -63,3 +63,11 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 @media(prefers-reduced-motion:reduce){#world{animation:none!important}}
 
 #scene[data-phase=opening] .anchor.picked{opacity:1;animation:anchor-fade .72s both} @keyframes anchor-fade{0%,35%{opacity:1}100%{opacity:0}} #detail.visible{display:block!important}
+/* Seamless optical mesh: DOM buttons remain for keyboard accessibility. */
+#optical-scene{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+#layers .layer{pointer-events:none!important;background:transparent!important;opacity:0!important;}
+#layers .layer:focus-visible{opacity:1!important;outline:1px solid #386d99;}
+#layers .anchor{z-index:300;}
+#layers{cursor:default;}
+#scene[data-phase=explore] #layers{cursor:crosshair;}
+@media(pointer:coarse){#scene[data-phase=explore] #layers{cursor:grab;}}
