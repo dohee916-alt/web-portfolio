@@ -58,9 +58,9 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
     else {p.y+=t*m.H*.12;p.opacity*=1-t*.83}
    }
   }
-  poses[i]=p;drawSheet(cards[i],p,m,i);
+  poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=archivePose(i,m,focus,0);const a=anchors[i];const ax=base.x,ay=base.y+m.H*.12;points.push([ax,ay]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=mobile()&&Math.abs(i-focus)>1.35?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.disabled=!archive;
+  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=mobile()&&Math.abs(i-focus)>1.35?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const bump=selected===i&&phase==='opening'?Math.sin(Math.PI*clamp((now-openedAt)/220))*-11:0;
   a.style.setProperty('--bump',bump+'px')
  }

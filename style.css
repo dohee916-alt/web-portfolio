@@ -10,7 +10,7 @@ header{letter-spacing:.16em}header button,#begin,#nav{border-color:#758c9c;color
 .layer.fallen{transform:translate3d(-50%,-100%,var(--z)) rotateY(-23deg) rotateX(-88deg)}
 .layer.explore{background:linear-gradient(135deg,#e6ffffa6,#9fdaee70 45%,#458fac4d 85%,#c8edf9a6);transform:translate3d(-50%,-100%,0) rotateY(var(--angle)) rotateZ(-9deg) translateY(var(--lift,0px));box-shadow:inset 1px 1px 0 #fff,inset -3px -2px 0 #195a9066,9px 15px 25px #23547524}
 .layer.selected{left:26%;top:66%;transform:translate3d(-50%,-100%,120px) rotateY(-12deg) scale(1.18);z-index:99}
-#scene[data-phase=detail] .layer:not(.selected),#scene[data-phase=opening] .layer:not(.selected){opacity:.10!important;pointer-events:none}
+#scene[data-phase=detail] .layer:not(.selected),#scene[data-phase=opening] .layer:not(.selected){pointer-events:none}
 #scene[data-phase=detail] .heading,#scene[data-phase=opening] .heading{opacity:0}
 #scene[data-phase=detail] #nav,#scene[data-phase=opening] #nav{visibility:hidden}
 #detail{position:fixed;inset:0 0 0 auto;margin:0;width:45vw;max-height:none;height:100dvh;max-width:none;border:0;background:transparent;padding:15vh 6vw 5vh 2vw;overflow:auto}
@@ -43,7 +43,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 .sheet-strip:first-child{border-top:1px solid #fff}
 .sheet-strip:last-child{border-bottom:1px solid #5479939c}
 .layer:focus-visible{outline:1px solid #386d99;outline-offset:4px}
-#scene[data-phase=opening] .layer:not(.selected),#scene[data-phase=detail] .layer:not(.selected){opacity:revert!important}
+
 #curve{overflow:visible;transition:opacity .32s}
 .anchor{left:0;top:0;transform:translate(-50%,var(--bump,0px));padding:0;border:0;background:none;transition:opacity .25s;z-index:300;pointer-events:none;cursor:pointer}
 #scene[data-phase=explore] .anchor{pointer-events:auto;opacity:1}
@@ -61,3 +61,5 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #detail #placeholder:empty{display:none}
 @media(max-width:600px){#detail{inset:auto 0 0;width:100vw;height:45dvh;background:linear-gradient(180deg,transparent,#e9f0f3 18%);padding:4vh 7vw 2vh}.anchor{white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){#world{animation:none!important}}
+
+#scene[data-phase=opening] .anchor.picked{opacity:1;animation:anchor-fade .72s both} @keyframes anchor-fade{0%,35%{opacity:1}100%{opacity:0}} #detail.visible{display:block!important}
