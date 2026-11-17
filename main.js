@@ -65,10 +65,12 @@ function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClien
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 function anchorAt(i,m,f=focus){
- const t=.5+(i-f)*(mobile()?.34:.12);
- const x=m.W*t;
- // The reference's steep lower-left to almost horizontal upper-right arc.
- const q=clamp(t,-.8,1), y=m.viewportH*(.15+.62*Math.pow(1-q,2))-m.topInset;
+ const d=i-f,small=mobile(),abs=Math.abs(d);
+ // A continuous, asymmetric perspective arc: wide in front, compressed toward the vanishing end.
+ const spacing=small?.35:(d<0?.163:.149);
+ const x=m.W*(.5+d*spacing/(1+.10*abs));
+ const t=Math.tanh(d/(small?2.1:2.65));
+ const y=m.viewportH*(.335-.195*t+.035*t*t)-m.topInset;
  return {x,y};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
@@ -85,9 +87,19 @@ function flight(u,m){
 }
 function currentDot(u,m){return flight(u,m)}
 function archivePose(i,m,f=focus,amount=1){
- const d=i-f,t=clamp(.5+d*(mobile()?.34:.12)),a=anchorAt(i,m,f),emphasis=clamp(lift[i]/100)*amount,size=(mobile()?1.04:.96)*(1+.15*emphasis);
- const p={x:a.x,y:a.y+m.h,z:(mobile()?-Math.abs(d)*38:55+t*105)+165*emphasis,ry:(mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14))+14*emphasis,rz:(mobile()?-17:-24+t*12)+5*emphasis,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-3.9)*.65),scale:size};
- return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+88-60*emphasis);
+ const d=i-f,abs=Math.abs(d),small=mobile(),a=anchorAt(i,m,f);
+ const emphasis=clamp(lift[i]/100)*amount;
+ const spread=1-Math.exp(-abs*.85);
+ const depth=(small?110:185)+emphasis*(small?90:130)-spread*(d<0?235:320);
+ const yaw=Math.sign(d)*(d<0?48:58)*spread;
+ const roll=-7- (d<0?15:8)*spread;
+ // Scale in projected screen space, so the central card always reads as the foreground object.
+ const camera=Math.max(780,m.W*1.05);
+ const perspective=camera/Math.max(180,camera-depth);
+ const projectedH=Math.min(m.viewportH*(small?.32:.42),m.h*1.12)*(1-.36*spread)*(1+.07*emphasis);
+ const size=projectedH/(m.h*perspective);
+ const p={x:a.x,y:a.y+m.h,z:depth,ry:yaw,rz:roll,fall:0,opacity:small?clamp(1-(abs-1.5)*.60):clamp(1-(abs-3.6)*.7),scale:size};
+ return alignTop(p,m,i,a.x+(small?7:14)*Math.tanh(d),a.y+(small?56:66)-32*emphasis);
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -116,7 +128,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='animation'&&(now-startAt)/1000>=LAUNCH_END){setPhase('explore');$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=(now-startAt)/1000;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=true;
- for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?100*Math.exp(-Math.pow(Math.abs(d)/.58,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
+ for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?100*Math.exp(-Math.pow(Math.abs(d)/.67,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
  let points=[];
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
@@ -148,7 +160,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=mobile()&&Math.abs(i-focus)>1.35?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=Math.abs(i-focus)>(mobile()?1.6:3.9)?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
@@ -177,7 +189,7 @@ function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 scene.addEventListener('wheel',e=>{if(phase!=='explore'||mobile())return;e.preventDefault();let delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;const now=performance.now(),elapsed=Math.max(16,now-lastWheel);const units=clamp(delta/105,-.95,.95);scrollSpeed=mix(scrollSpeed,units*1000/elapsed,.35);target=clamp(target+units,0,N-1);wheelAt=lastWheel=now},{passive:false});
 scene.addEventListener('pointerdown',e=>{if(phase==='explore'&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,index:focus,id:e.pointerId,moved:false};target=focus;velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
-window.addEventListener('pointermove',e=>{if(!drag||phase!=='explore'||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>5)drag.moved=true;if(drag.moved){const now=performance.now();const v=-(e.clientX-lastDragX)/(measure().W*.25)*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.45),-5,5);lastDragX=e.clientX;lastDragT=now;target=clamp(drag.index-dx/(measure().W*.25),0,N-1)}});
+window.addEventListener('pointermove',e=>{if(!drag||phase!=='explore'||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>5)drag.moved=true;if(drag.moved){const now=performance.now();const v=-(e.clientX-lastDragX)/(measure().W*.30)*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.45),-5,5);lastDragX=e.clientX;lastDragT=now;target=clamp(drag.index-dx/(measure().W*.25),0,N-1)}});
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+300;if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.16,-1.4,1.4)),0,N-1);velocity=0}drag=null}
 scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
 scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
