@@ -125,3 +125,6 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 /* Centered scroll-driven archive, continuous trackpad and mobile swipe. */
 #scene[data-phase=explore] #layers{cursor:default}
 @media(pointer:coarse){#scene[data-phase=explore] #layers{cursor:grab}}
+
+/* Intro uses the visible stack itself as the start control. */
+#scene[data-phase=intro].intro-card-hover,#scene[data-phase=intro].intro-card-hover #layers{cursor:pointer}

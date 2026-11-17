@@ -12,7 +12,7 @@ items.forEach((p,i)=>{
  
  card.append(shell);root.append(card);
  const anchor=document.createElement('button');anchor.type='button';anchor.className='anchor';anchor.setAttribute('aria-label',p.title);const y=document.createElement('span');y.textContent=p.year;const title=document.createElement('b');title.textContent=p.title;anchor.append(y,title);root.append(anchor);
- const select=()=>{if(performance.now()<blockClick||phase!=='explore')return;if(Math.abs(i-focus)>.55){target=i;return}open(i)};
+ const select=()=>{if(phase==='intro'&&i===0){start();return}if(performance.now()<blockClick||phase!=='explore')return;if(Math.abs(i-focus)>.55){target=i;return}open(i)};
  card.addEventListener('click',select);anchor.addEventListener('click',()=>{if(phase==='explore'&&performance.now()>blockClick){if(Math.abs(i-focus)>.55)target=i;else open(i)}});
  card.addEventListener('focus',()=>{if(phase==='explore'&&!mobile()){target=i}});
  cards.push({card,shell,strips});anchors.push(anchor);lift.push(0);
@@ -59,7 +59,7 @@ function opticalRender(m){
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
-scene.addEventListener('click',e=>{if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #begin, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(Math.abs(i-focus)>.55){target=i;return}open(i)});
+scene.addEventListener('click',e=>{if(phase==='intro'){if(pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(Math.abs(i-focus)>.55){target=i;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
@@ -168,17 +168,19 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
  requestAnimationFrame(frame)
 }
-function start(){if(phase!=='intro')return;setPhase('animation');startAt=performance.now();if(reduced)startAt-=LAUNCH_END*1000;$('begin').hidden=true;$('hint').textContent='';target=focus=Math.floor((N-1)/2)}
-function reset(){velocity=0;wheelAt=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');cards.forEach(o=>o.card.disabled=true);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하거나 드래그하여 시작하세요.':'스크롤하여 시작하세요.';$('begin').hidden=false;$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function start(){if(phase!=='intro')return;scene.classList.remove('intro-card-hover');cards.forEach(o=>o.card.disabled=true);setPhase('animation');startAt=performance.now();if(reduced)startAt-=LAUNCH_END*1000;$('hint').textContent='';target=focus=Math.floor((N-1)/2)}
+function reset(){velocity=0;wheelAt=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하여 시작하세요.':'카드를 클릭하여 시작하세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
 function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
-$('close').onclick=close;$('reset').onclick=reset;$('begin').onclick=start;
+$('close').onclick=close;$('reset').onclick=reset;
 function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-scene.addEventListener('wheel',e=>{if(phase==='intro'){e.preventDefault();start();wheelAt=performance.now();return}if(phase!=='explore'||mobile())return;e.preventDefault();let delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;target=clamp(target+delta/180,0,N-1);wheelAt=performance.now()},{passive:false});
-scene.addEventListener('pointerdown',e=>{if(phase==='intro'&&e.pointerType!=='mouse'){start();return}if(phase==='explore'&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,index:target,id:e.pointerId,moved:false};velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
+scene.addEventListener('wheel',e=>{if(phase!=='explore'||mobile())return;e.preventDefault();let delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;target=clamp(target+delta/180,0,N-1);wheelAt=performance.now()},{passive:false});
+scene.addEventListener('pointerdown',e=>{if(phase==='explore'&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,index:target,id:e.pointerId,moved:false};velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
 window.addEventListener('pointermove',e=>{if(!drag||phase!=='explore'||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>8)drag.moved=true;if(drag.moved){const now=performance.now();const v=-(e.clientX-lastDragX)/(measure().W*.32)*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.45),-5,5);lastDragX=e.clientX;lastDragT=now;target=clamp(drag.index-dx/(measure().W*.32),0,N-1)}});
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+300;if(performance.now()-lastDragT>100||Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}drag=null}
+scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
+scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(phase==='intro'&&['ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();start()}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1)});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1)});
 reset();requestAnimationFrame(frame);
