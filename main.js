@@ -5,7 +5,7 @@ const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
-function setPhase(p){phase=p;scene.dataset.phase=p;$('fold').hidden=p!=='explore'}
+function setPhase(p){phase=p;scene.dataset.phase=p;$('fold').hidden=p!=='explore'||focus>.035||target>.035}
 items.forEach((p,i)=>{
  const card=document.createElement('button');card.className='layer';card.type='button';card.disabled=true;card.setAttribute('aria-label',p.title);card.style.setProperty('--color',p.color);
  const shell=document.createElement('div');shell.className='sheet';const strips=[];
@@ -168,7 +168,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  }
  opticalRender(m);
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.62*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
- $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
+ $('fold').hidden=phase!=='explore'||focus>.035||target>.035;$('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
