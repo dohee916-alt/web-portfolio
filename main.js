@@ -117,7 +117,7 @@ function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
 }
-const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,UP_START=DOWN_END+.22,UP_END=UP_START+(N-2)*.13+.72,LAUNCH_START=UP_END+.18,LAUNCH_END=LAUNCH_START+1.05;
+const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35;
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),0,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
  if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
@@ -131,10 +131,9 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   if(phase==='animation'){
    if(i<N-1){
     const fall=ease((time-i*FALL_STAGGER)/FALL_DURATION);
-    const rise=ease((time-UP_START-(N-2-i)*.13)/.72);
-    p.fall=fall*(1-rise);p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
+    p.fall=fall;p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
    }
-   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.05),q=ease(t),spread=ease(clamp((t-.12)/.88));const dest=archivePose(i,m,focus,1);p=between(p,dest,spread);p.y-=Math.sin(Math.PI*t)*m.H*.19;p.ry=mix(0,dest.ry,q);p.rz=mix(0,dest.rz,q);p.z+=Math.sin(Math.PI*t)*45}
+   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.35),q=ease(t);const dest=archivePose(i,m,focus,1);p=between(p,dest,q);p.y-=Math.sin(Math.PI*t)*m.H*.24;p.z+=Math.sin(Math.PI*t)*45}
   }else if(archive){
    p=archivePose(i,m);
    if(selected>=0&&(phase==='opening'||phase==='detail'||phase==='closing')){
