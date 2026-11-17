@@ -20,3 +20,6 @@ Independent adaptation: finite ascending arc, stronger center depth/size, normal
 
 ## Shared orientation stack
 Verified source: https://github.com/codrops/3DStackMotion/blob/main/js/effect-1/stackMotionEffect.js — common group orientation, successive depth offsets. Demo: https://tympanus.net/Development/3DStackMotion/. Adapted to a finite angled arc with parallel planes, modest selected-card displacement, and one quadratic timeline. No third-party code copied.
+
+## Reversible intro timeline
+Verified GSAP timeline docs: https://gsap.com/docs/v3/GSAP/Timeline/ and https://gsap.com/docs/v3/Plugins/ScrollTrigger/. Codrops applied example: https://tympanus.net/codrops/2026/05/06/from-shader-uniforms-to-clip-path-wipes-how-gsap-drives-my-portfolio/. The existing canvas uses one normalized playhead with fixed stage durations and separate input targets, adapting timeline play/reverse and scrub rather than accelerating the entire sequence exponentially. No GSAP dependency added.

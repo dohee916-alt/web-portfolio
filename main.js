@@ -118,12 +118,12 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,UP_START=DOWN_END+.22,UP_END=UP_START+(N-2)*.13+.72,LAUNCH_START=UP_END+.18,LAUNCH_END=LAUNCH_START+1.05;
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),0,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
- if(phase==='animation'){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?30: autoUnfold?5:13)));if(Math.abs(unfold-unfoldTarget)<.002)unfold=unfoldTarget;}
+ if(phase==='animation'){const distance=unfoldTarget-unfold;const step=dt/LAUNCH_END*(autoUnfold?1:1.45);unfold+=Math.sign(distance)*Math.min(Math.abs(distance),step);if(Math.abs(unfoldTarget-unfold)<1e-8)unfold=unfoldTarget;}
  if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하거나 드래그하세요.':'카드를 클릭하거나 스크롤하세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
  if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
- const active=true;
- for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
+ const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
+ for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
  let points=[];
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
@@ -133,7 +133,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
     const rise=ease((time-UP_START-(N-2-i)*.13)/.72);
     p.fall=fall*(1-rise);p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
    }
-   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.05), q=ease(t);p=between(p,archivePose(i,m,focus,0),q);p.y-= Math.sin(Math.PI*t)*m.H*.32;p.ry+=Math.sin(Math.PI*t)*42;p.z+=Math.sin(Math.PI*t)*85}
+   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.05), q=ease(t);p=between(p,archivePose(i,m,focus,1),q);p.y-= Math.sin(Math.PI*t)*m.H*.32;p.ry+=Math.sin(Math.PI*t)*42;p.z+=Math.sin(Math.PI*t)*85}
   }else if(archive){
    p=archivePose(i,m);
    if(selected>=0&&(phase==='opening'||phase==='detail'||phase==='closing')){
@@ -176,11 +176,13 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  requestAnimationFrame(frame)
 }
 function enterTransition(){if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true;}scene.classList.remove('intro-card-hover');}
-function start(){if(phase!=='intro')return;enterTransition();autoUnfold=true;unfoldTarget=1;target=focus=returnFocus; if(reduced)unfold=1;}
+function start(){if(phase!=='intro')return;enterTransition();autoUnfold=true;unfoldTarget=1;target=focus=returnFocus; if(reduced){unfold=1;}}
 function navigate(delta){
  if(!delta)return;
+ if(phase==='animation'&&autoUnfold&&delta>0)return;
+ if(phase==='animation'&&autoUnfold){unfoldTarget=unfold;}
  autoUnfold=false;
- if(phase==='intro'){if(delta<0)return;enterTransition();unfoldTarget=0;target=focus=returnFocus}
+ if(phase==='intro'){if(delta<0)return;start();return}
  if(phase==='animation'){unfoldTarget=clamp(unfoldTarget+delta/RANGE);return}
  if(phase!=='explore')return;
  if(delta<0&&target<=.005&&focus<.06){returnFocus=0;unfold=unfoldTarget=1;enterTransition();unfoldTarget=clamp(1+delta/RANGE);return}
