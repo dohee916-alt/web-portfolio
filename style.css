@@ -143,3 +143,5 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 /* Compact shared-orientation stack; no wave at each timeline stop. */
 #scene[data-phase=explore] #curve{stroke-opacity:.55;stroke-width:1}
 #scene[data-phase=explore] .anchor:not(.active){opacity:.75}
+
+#scene[data-phase=animation]{touch-action:none;overscroll-behavior:none}
