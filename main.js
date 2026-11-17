@@ -38,9 +38,12 @@ function mesh(p,m,i){
 }
 function shape(poly){ctx.beginPath();poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
 function opticalRender(m){
- const dpr=Math.min(devicePixelRatio||1,2),w=Math.round(m.W*dpr),h=Math.round(m.H*dpr);
- if(surface.width!==w||surface.height!==h){surface.width=w;surface.height=h;surface.style.width=m.W+'px';surface.style.height=m.H+'px'}
- ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,m.W,m.H);
+ // Render on the entire scene, not just the lower world layout box.
+ const dpr=Math.min(devicePixelRatio||1,2),w=Math.round(m.W*dpr),h=Math.round(m.viewportH*dpr);
+ if(surface.width!==w||surface.height!==h){surface.width=w;surface.height=h}
+ surface.style.top=(-m.topInset)+'px';surface.style.width=m.W+'px';surface.style.height=m.viewportH+'px';
+ ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);
+ ctx.setTransform(dpr,0,0,dpr,0,m.topInset*dpr);
  silhouettes=poses.map((p,i)=>mesh(p,m,i)).sort((a,b)=>(a.p.z+(a.i===selected?500:0))-(b.p.z+(b.i===selected?500:0)));
  for(const s of silhouettes){const {p,L,R,poly}=s;if(p.opacity<.01)continue;
   ctx.save();ctx.globalAlpha=p.opacity;shape(poly);
@@ -51,14 +54,14 @@ function opticalRender(m){
   ctx.beginPath();R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(76,117,155,.42)';ctx.lineWidth=1.6;ctx.stroke();
   // A broad, continuous highlight follows the curved sheet, without segment seams.
   ctx.save();shape(poly);ctx.clip();const a=L[Math.floor(L.length*.6)],b=R[Math.floor(R.length*.6)];
-  const shimmer=ctx.createLinearGradient(a[0]-18,a[1]-35,b[0]+18,b[1]+35);shimmer.addColorStop(0,'#ffffff00');shimmer.addColorStop(.52,'#ffffff31');shimmer.addColorStop(1,'#ffffff00');ctx.fillStyle=shimmer;ctx.fillRect(0,0,m.W,m.H);ctx.restore();ctx.restore()
+  const shimmer=ctx.createLinearGradient(a[0]-18,a[1]-35,b[0]+18,b[1]+35);shimmer.addColorStop(0,'#ffffff00');shimmer.addColorStop(.52,'#ffffff31');shimmer.addColorStop(1,'#ffffff00');ctx.fillStyle=shimmer;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();ctx.restore()
  }
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
-root.addEventListener('click',e=>{if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor'))return;const i=pick(e);if(i<0)return;if(mobile()&&Math.abs(i-focus)>.55){target=i;return}open(i)});
+scene.addEventListener('click',e=>{if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #begin, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(mobile()&&Math.abs(i-focus)>.55){target=i;return}open(i)});
 
-function measure(){const r=root.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32}}
+function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
 function archivePose(i,m,f=focus,amount=1){const d=i-f,mid=(N-1)/2,v=mobile()?d:i-mid,xx=mobile()?m.W*.5+d*m.W*.32:m.W*(.13+i*.74/(N-1));const norm=v/Math.max(mid,1);const yy=m.H*(.63+.16*Math.pow(Math.min(Math.abs(norm),1.7),2));return {x:xx,y:yy-lift[i]*amount,z:mobile()?-Math.abs(d)*34:35-Math.pow(norm,2)*95,ry:mobile()?clamp(d*25,-65,65):58+norm*18,rz:-norm*8,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):1,scale:mobile()?1-Math.min(Math.abs(d)*.09,.3):1}}
 function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return o}
@@ -110,8 +113,8 @@ $('close').onclick=close;$('reset').onclick=reset;$('begin').onclick=start;
 function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);hover=true}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 scene.addEventListener('wheel',e=>{if(phase==='intro'){e.preventDefault();start()}},{passive:false});
-root.addEventListener('pointermove',e=>{if(phase!=='explore'||mobile()||e.pointerType!=='mouse')return;const r=root.getBoundingClientRect();target=clamp(((e.clientX-r.left)/r.width-.13)/.74*(N-1),0,N-1);hover=true});
-root.addEventListener('pointerleave',()=>{if(!mobile())hover=false});
+scene.addEventListener('pointermove',e=>{if(phase!=='explore'||mobile()||e.pointerType!=='mouse')return;const r=root.getBoundingClientRect();target=clamp(((e.clientX-r.left)/r.width-.13)/.74*(N-1),0,N-1);hover=true});
+scene.addEventListener('pointerleave',()=>{if(!mobile())hover=false});
 scene.addEventListener('pointerdown',e=>{if(phase==='intro'&&e.pointerType!=='mouse'){start();return}if(phase==='explore'&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,index:target,id:e.pointerId,moved:false};velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
 window.addEventListener('pointermove',e=>{if(!drag||phase!=='explore'||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>8)drag.moved=true;if(drag.moved){const now=performance.now();const v=-(e.clientX-lastDragX)/(measure().W*.32)*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.45),-5,5);lastDragX=e.clientX;lastDragT=now;target=clamp(drag.index-dx/(measure().W*.32),0,N-1)}});
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+300;if(performance.now()-lastDragT>100||Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}drag=null}

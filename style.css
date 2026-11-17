@@ -71,3 +71,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #layers{cursor:default;}
 #scene[data-phase=explore] #layers{cursor:crosshair;}
 @media(pointer:coarse){#scene[data-phase=explore] #layers{cursor:grab;}}
+
+/* Allow the optical surface to extend above the layout world. Logical poses and anchor positions stay unchanged. */
+#world,#layers{overflow:visible}
+#optical-scene{inset:auto;left:0;top:0;max-width:none;max-height:none;}
