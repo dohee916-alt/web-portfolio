@@ -24,7 +24,7 @@ items.forEach((p,i)=>{
    gallery (damped continuous navigation), radial-gallery (spatial picking).
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
-const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false;const RANGE=3.2;
+const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
  const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
@@ -65,11 +65,11 @@ function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClien
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
+// The stack opens onto a shallow continuous curved track.
 function anchorAt(i,m,f=focus){
- const d=i-f,small=mobile(),step=small?.27:.088;
- const x=m.W*(.5+d*step);
- const t=(x/m.W-.5), y=m.viewportH*(.29-.38*t+.12*t*t)-m.topInset;
- return {x,y};
+ const d=i-f,small=mobile(),step=small?.29:.102;
+ const x=m.W*(.5+d*step),t=(x/m.W-.5);
+ return {x,y:m.viewportH*(.27+.30*t*t-.12*t)-m.topInset};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
 function topCenter(p,m){const ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,a=m.h*p.scale*Math.sin(rz),b=-m.h*p.scale*Math.cos(rz);const z=p.z-a*Math.sin(ry);const v=project(p.x+a*Math.cos(ry),p.y+b,z,m);return {x:v[0],y:v[1]}}
@@ -86,13 +86,14 @@ function flight(u,m){
 function currentDot(u,m){return flight(u,m)}
 // Codrops 3DStackMotion: coherent group orientation and successive depth offsets.
  // Keep the planes parallel, like the supplied blue bank-card reference.
+// Common track geometry, continuous through the intro-to-gallery handoff.
 function archivePose(i,m,f=focus,amount=1){
  const d=i-f,small=mobile(),a=anchorAt(i,m,f),emphasis=clamp(lift[i]/100)*amount;
- const depth=(small?45:85)+d*(small?18:27)+emphasis*(small?36:48);
+ const theta=Math.atan(d*.24),depth=(small?70:105)-Math.abs(d)*(small?22:33)+emphasis*45;
  const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-depth);
- const projectedH=Math.min(m.viewportH*(small?.34:.48),m.h*1.12)*(1+.025*d);
- const p={x:a.x,y:a.y+m.h,z:depth,ry:-38,rz:-19,fall:0,opacity:small?clamp(1-(Math.abs(d)-2)*.55):clamp(1-(Math.abs(d)-5)*.65),scale:projectedH/(m.h*k)};
- return alignTop(p,m,i,a.x,a.y+(small?70:84)-emphasis*(small?42:52));
+ const projectedH=Math.min(m.viewportH*(small?.34:.43),m.h*1.08)*(1-.035*Math.min(Math.abs(d),5));
+ const p={x:a.x,y:a.y+m.h,z:depth,ry:-31+theta*12,rz:-13+theta*6,fall:0,opacity:small?clamp(1-(Math.abs(d)-1.8)*.6):clamp(1-(Math.abs(d)-4.8)*.6),scale:projectedH/(m.h*k)};
+ return alignTop(p,m,i,a.x,a.y+(small?66:78)-emphasis*40);
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -118,12 +119,12 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,UP_START=DOWN_END+.22,UP_END=UP_START+(N-2)*.13+.72,LAUNCH_START=UP_END+.18,LAUNCH_END=LAUNCH_START+1.05;
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),0,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
- if(phase==='animation'){const distance=unfoldTarget-unfold;const step=dt/LAUNCH_END*(autoUnfold?1:1.45);unfold+=Math.sign(distance)*Math.min(Math.abs(distance),step);if(Math.abs(unfoldTarget-unfold)<1e-8)unfold=unfoldTarget;}
- if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하거나 드래그하세요.':'카드를 클릭하거나 스크롤하세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
- if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+ if(phase==='animation'){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
+ if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
+ if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;gate=true;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
- for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
+ for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=phase==='animation'?want:mix(lift[i],want,1-Math.exp(-dt*14))}
  let points=[];
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
@@ -133,7 +134,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
     const rise=ease((time-UP_START-(N-2-i)*.13)/.72);
     p.fall=fall*(1-rise);p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
    }
-   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.05), q=ease(t);p=between(p,archivePose(i,m,focus,1),q);p.y-= Math.sin(Math.PI*t)*m.H*.32;p.ry+=Math.sin(Math.PI*t)*42;p.z+=Math.sin(Math.PI*t)*85}
+   if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.05),q=ease(t),spread=ease(clamp((t-.12)/.88));const dest=archivePose(i,m,focus,1);p=between(p,dest,spread);p.y-=Math.sin(Math.PI*t)*m.H*.19;p.ry=mix(0,dest.ry,q);p.rz=mix(0,dest.rz,q);p.z+=Math.sin(Math.PI*t)*45}
   }else if(archive){
    p=archivePose(i,m);
    if(selected>=0&&(phase==='opening'||phase==='detail'||phase==='closing')){
@@ -168,36 +169,53 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
 
  }
  opticalRender(m);
- svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.12*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
- $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=false;$('next').disabled=target>=N-1;
+ svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.30*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
+ $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
  requestAnimationFrame(frame)
 }
-function enterTransition(){if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true;}scene.classList.remove('intro-card-hover');}
-function start(){if(phase!=='intro')return;enterTransition();autoUnfold=true;unfoldTarget=1;target=focus=returnFocus; if(reduced){unfold=1;}}
+function enterTransition(){if(phase==='intro'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true;}scene.classList.remove('intro-card-hover')}
+function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
 function navigate(delta){
  if(!delta)return;
- if(phase==='animation'&&autoUnfold&&delta>0)return;
- if(phase==='animation'&&autoUnfold){unfoldTarget=unfold;}
- autoUnfold=false;
- if(phase==='intro'){if(delta<0)return;start();return}
+ if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus}
  if(phase==='animation'){unfoldTarget=clamp(unfoldTarget+delta/RANGE);return}
- if(phase!=='explore')return;
- if(delta<0&&target<=.005&&focus<.06){returnFocus=0;unfold=unfoldTarget=1;enterTransition();unfoldTarget=clamp(1+delta/RANGE);return}
+ if(phase!=='explore'||gate)return;
  target=clamp(target+delta,0,N-1);
 }
-function reset(){unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하거나 드래그하세요.':'카드를 클릭하거나 스크롤하세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function reset(){gate=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하거나 드래그하세요.':'카드를 클릭하거나 스크롤하세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
 function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
 $('close').onclick=close;
-function step(d){if(phase==='explore'||phase==='animation'||phase==='intro'){navigate(d);wheelAt=0}}
+function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}else navigate(d)}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-scene.addEventListener('wheel',e=>{if(!['intro','animation','explore'].includes(phase)||mobile())return;e.preventDefault();let delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;const now=performance.now(),elapsed=Math.max(16,now-lastWheel);const units=clamp(delta/105,-.95,.95);scrollSpeed=mix(scrollSpeed,units*1000/elapsed,.35);navigate(units);wheelAt=lastWheel=now},{passive:false});
-scene.addEventListener('pointerdown',e=>{if(['intro','animation','explore'].includes(phase)&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
-window.addEventListener('pointermove',e=>{if(!drag||!['intro','animation','explore'].includes(phase)||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){const now=performance.now();const amount=-(e.clientX-lastDragX)/(measure().W*.25);navigate(amount);velocity=clamp(mix(velocity,amount*1000/Math.max(8,now-lastDragT),.45),-5,5);lastDragX=e.clientX;lastDragT=now}});
-function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),0,N-1)}velocity=0}drag=null}
+scene.addEventListener('wheel',e=>{
+ if(!['intro','animation','explore'].includes(phase)||mobile())return;e.preventDefault();
+ const now=performance.now(),gap=now-lastWheel;lastWheel=now;
+ if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
+ const intro=phase!=='explore';let delta=intro?e.deltaY:(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY);
+ if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
+ const units=clamp(delta/105,-1.5,1.5);if(!intro){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
+ navigate(units);
+},{passive:false});
+scene.addEventListener('pointerdown',e=>{
+ if(['intro','animation','explore'].includes(phase)&&mobile()&&!e.target.closest('#nav')){
+  const stage=phase==='explore'?'gallery':'intro';if(stage==='gallery')gate=false;
+  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,stage,axis:null,lastY:e.clientY};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
+ }
+});
+window.addEventListener('pointermove',e=>{
+ if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true}
+ if(!drag.axis)return;
+ const now=performance.now(),m=measure();
+ if(drag.stage==='intro'&&drag.axis==='y'&&phase!=='explore')navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16));
+ if(drag.stage==='gallery'&&drag.axis==='x'&&phase==='explore'){const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta);velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
+ drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
+});
+function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.stage==='gallery'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),0,N-1)}velocity=0}drag=null}
 scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
 scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);

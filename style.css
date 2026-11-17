@@ -145,3 +145,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #scene[data-phase=explore] .anchor:not(.active){opacity:.75}
 
 #scene[data-phase=animation]{touch-action:none;overscroll-behavior:none}
+
+/* Scrubbed transition: timeline appears only as the shared track settles. */
+#scene[data-phase=animation]{touch-action:none;overscroll-behavior:none}
+#scene[data-phase=explore] #curve{stroke-opacity:.6}

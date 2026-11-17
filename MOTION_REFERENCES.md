@@ -23,3 +23,9 @@ Verified source: https://github.com/codrops/3DStackMotion/blob/main/js/effect-1/
 
 ## Reversible intro timeline
 Verified GSAP timeline docs: https://gsap.com/docs/v3/GSAP/Timeline/ and https://gsap.com/docs/v3/Plugins/ScrollTrigger/. Codrops applied example: https://tympanus.net/codrops/2026/05/06/from-shader-uniforms-to-clip-path-wipes-how-gsap-drives-my-portfolio/. The existing canvas uses one normalized playhead with fixed stage durations and separate input targets, adapting timeline play/reverse and scrub rather than accelerating the entire sequence exponentially. No GSAP dependency added.
+
+## Scrubbed stack to gallery
+- https://tympanus.net/codrops/2022/05/11/stack-to-content-layout-transition/ — shared stack and gallery elements.
+- https://tympanus.net/codrops/2025/11/11/building-a-3d-infinite-carousel-with-reactive-background-gradients/ — continuous curved carousel coordinates.
+- https://tympanus.net/codrops/2026/07/07/building-a-scroll-driven-3d-gallery-using-a-blender-camera-path-with-three-js-and-gsap/ — unified directional input.
+One playhead, gesture ownership, fresh-wheel gate, and shared final poses. Finite track rather than infinite wrap.
