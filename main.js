@@ -62,7 +62,7 @@ function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.cli
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
-function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
+function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
