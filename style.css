@@ -159,3 +159,5 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 
 /* Return arrow appears just before the first timeline stop. */
 .heading,.heading[hidden]{display:none!important}header #fold{position:fixed;left:clamp(20px,6vw,100px);top:50%;transform:translateY(-50%);width:48px;height:48px;display:grid;place-items:center;padding:0;border:0;border-radius:0;background:none;color:#355a75;z-index:1001;pointer-events:auto}header #fold:hover{background:none;color:#163954}header #fold[hidden]{display:none!important}header #fold svg{display:block}
+
+header #fold{transform:translate(-50%,-50%);width:44px;height:44px;left:0;top:0}header #fold svg{width:24px;height:24px}header #fold{background:transparent}header #fold:hover{background:transparent}
