@@ -156,3 +156,6 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 
 /* Keep the presentation title out of the actual experience. */
 .heading{display:none!important}
+
+/* Return arrow appears just before the first timeline stop. */
+.heading,.heading[hidden]{display:none!important}header #fold{position:fixed;left:clamp(20px,6vw,100px);top:50%;transform:translateY(-50%);width:48px;height:48px;display:grid;place-items:center;padding:0;border:0;border-radius:0;background:none;color:#355a75;z-index:1001;pointer-events:auto}header #fold:hover{background:none;color:#163954}header #fold[hidden]{display:none!important}header #fold svg{display:block}
