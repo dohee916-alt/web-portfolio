@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id),scene=$('scene'),root=$('layers'),items=window.PROJECTS,dialog=$('detail');
 const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a,b,t)=>a+(b-a)*t, ease=t=>{t=clamp(t);return t*t*(3-2*t)}, reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
-let phase='intro',startAt=0,focus=(N-1)/2,target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
+let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 function setPhase(p){phase=p;scene.dataset.phase=p}
@@ -12,9 +12,9 @@ items.forEach((p,i)=>{
  
  card.append(shell);root.append(card);
  const anchor=document.createElement('button');anchor.type='button';anchor.className='anchor';anchor.setAttribute('aria-label',p.title);const y=document.createElement('span');y.textContent=p.year;const title=document.createElement('b');title.textContent=p.title;anchor.append(y,title);root.append(anchor);
- const select=()=>{if(performance.now()<blockClick||phase!=='explore')return;if(mobile()&&Math.abs(i-focus)>.55){target=i;return}open(i)};
- card.addEventListener('click',select);anchor.addEventListener('click',()=>{if(phase==='explore'&&performance.now()>blockClick)open(i)});
- card.addEventListener('focus',()=>{if(phase==='explore'&&!mobile()){target=i;hover=true}});
+ const select=()=>{if(performance.now()<blockClick||phase!=='explore')return;if(Math.abs(i-focus)>.55){target=i;return}open(i)};
+ card.addEventListener('click',select);anchor.addEventListener('click',()=>{if(phase==='explore'&&performance.now()>blockClick){if(Math.abs(i-focus)>.55)target=i;else open(i)}});
+ card.addEventListener('focus',()=>{if(phase==='explore'&&!mobile()){target=i}});
  cards.push({card,shell,strips});anchors.push(anchor);lift.push(0);
 });
 
@@ -24,7 +24,7 @@ items.forEach((p,i)=>{
    gallery (damped continuous navigation), radial-gallery (spatial picking).
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
-const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1;
+const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0;
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
  const rows=64, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
@@ -59,16 +59,16 @@ function opticalRender(m){
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
-scene.addEventListener('click',e=>{if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #begin, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(mobile()&&Math.abs(i-focus)>.55){target=i;return}open(i)});
+scene.addEventListener('click',e=>{if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #begin, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(Math.abs(i-focus)>.55){target=i;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 function anchorAt(i,m,f=focus){
- const t=mobile()? .5+(i-f)*.34 : .08+i*.84/(N-1);
+ const t=.5+(i-f)*(mobile()?.34:.12);
  const x=m.W*t;
  // The reference's steep lower-left to almost horizontal upper-right arc.
- const q=clamp(t,-.8,1.6), y=m.viewportH*(.15+.62*Math.pow(1-q,2))-m.topInset;
+ const q=clamp(t,-.8,1), y=m.viewportH*(.15+.62*Math.pow(1-q,2))-m.topInset;
  return {x,y};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
@@ -85,8 +85,8 @@ function flight(u,m){
 }
 function currentDot(u,m){return flight(u,m)}
 function archivePose(i,m,f=focus,amount=1){
- const d=i-f,t=i/Math.max(1,N-1),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
- const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):1,scale:size};
+ const d=i-f,t=clamp(.5+d*(mobile()?.34:.12)),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
+ const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-3.9)*.65),scale:size};
  return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+Math.max(35,88-lift[i]*amount));
 }
 function panelTarget(m){
@@ -112,11 +112,11 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,UP_START=DOWN_END+.22,UP_END=UP_START+(N-2)*.13+.72,LAUNCH_START=UP_END+.18,LAUNCH_END=LAUNCH_START+1.05;
-function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}focus=mix(focus,target,1-Math.exp(-dt*(drag?25:13)));
- if(phase==='animation'&&(now-startAt)/1000>=LAUNCH_END){setPhase('explore');$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'커서를 움직여 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>150){target=Math.round(target);wheelAt=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?25:13)));
+ if(phase==='animation'&&(now-startAt)/1000>=LAUNCH_END){setPhase('explore');$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=(now-startAt)/1000;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
- const active=mobile()||hover;
- for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?Math.exp(-d*d/1.65)*30:0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
+ const active=true;
+ for(let i=0;i<N;i++){const d=i-focus;const want=archive&&active?Math.max(0,1-Math.abs(d))*34:0;lift[i]=mix(lift[i],want,1-Math.exp(-dt*14))}
  let points=[];
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
@@ -165,19 +165,17 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
- if(phase==='closing'&&now-closingAt>=CLOSE_MS){selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
+ if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
  requestAnimationFrame(frame)
 }
-function start(){if(phase!=='intro')return;setPhase('animation');startAt=performance.now();if(reduced)startAt-=LAUNCH_END*1000;$('begin').hidden=true;$('hint').textContent='';target=focus=(N-1)/2}
-function reset(){velocity=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');cards.forEach(o=>o.card.disabled=true);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하거나 드래그하여 시작하세요.':'스크롤하여 시작하세요.';$('begin').hidden=false;$('nav').hidden=true;hover=false;target=focus=(N-1)/2;lift.fill(0)}
-function open(i){if(phase!=='explore')return;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
+function start(){if(phase!=='intro')return;setPhase('animation');startAt=performance.now();if(reduced)startAt-=LAUNCH_END*1000;$('begin').hidden=true;$('hint').textContent='';target=focus=Math.floor((N-1)/2)}
+function reset(){velocity=0;wheelAt=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');cards.forEach(o=>o.card.disabled=true);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하거나 드래그하여 시작하세요.':'스크롤하여 시작하세요.';$('begin').hidden=false;$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
 function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
 $('close').onclick=close;$('reset').onclick=reset;$('begin').onclick=start;
-function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);hover=true}}
+function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-scene.addEventListener('wheel',e=>{if(phase==='intro'){e.preventDefault();start()}},{passive:false});
-scene.addEventListener('pointermove',e=>{if(phase!=='explore'||mobile()||e.pointerType!=='mouse')return;const r=root.getBoundingClientRect();target=clamp(((e.clientX-r.left)/r.width-.08)/.84*(N-1),0,N-1);hover=true});
-scene.addEventListener('pointerleave',()=>{if(!mobile())hover=false});
+scene.addEventListener('wheel',e=>{if(phase==='intro'){e.preventDefault();start();wheelAt=performance.now();return}if(phase!=='explore'||mobile())return;e.preventDefault();let delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;target=clamp(target+delta/180,0,N-1);wheelAt=performance.now()},{passive:false});
 scene.addEventListener('pointerdown',e=>{if(phase==='intro'&&e.pointerType!=='mouse'){start();return}if(phase==='explore'&&mobile()&&!e.target.closest('#nav')){drag={x:e.clientX,index:target,id:e.pointerId,moved:false};velocity=0;lastDragX=e.clientX;lastDragT=performance.now()}});
 window.addEventListener('pointermove',e=>{if(!drag||phase!=='explore'||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>8)drag.moved=true;if(drag.moved){const now=performance.now();const v=-(e.clientX-lastDragX)/(measure().W*.32)*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.45),-5,5);lastDragX=e.clientX;lastDragT=now;target=clamp(drag.index-dx/(measure().W*.32),0,N-1)}});
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+300;if(performance.now()-lastDragT>100||Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}drag=null}

@@ -121,3 +121,7 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #detail.content-ready #projectTitle{opacity:clamp(0,calc(var(--reveal,0)*1.35 - .12),1)}
 #detail.content-ready #projectDesc{opacity:clamp(0,calc(var(--reveal,0)*1.65 - .42),1)}
 #detail.content-ready #placeholder{opacity:clamp(0,calc(var(--reveal,0)*2 - .85),1)}
+
+/* Centered scroll-driven archive, continuous trackpad and mobile swipe. */
+#scene[data-phase=explore] #layers{cursor:default}
+@media(pointer:coarse){#scene[data-phase=explore] #layers{cursor:grab}}
