@@ -5,7 +5,7 @@ const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
-function setPhase(p){phase=p;scene.dataset.phase=p}
+function setPhase(p){phase=p;scene.dataset.phase=p;$('fold').hidden=p!=='explore'}
 items.forEach((p,i)=>{
  const card=document.createElement('button');card.className='layer';card.type='button';card.disabled=true;card.setAttribute('aria-label',p.title);card.style.setProperty('--color',p.color);
  const shell=document.createElement('div');shell.className='sheet';const strips=[];
@@ -118,9 +118,9 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35;
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),0,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
- if(phase==='animation'){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
- if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
- if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;gate=false;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'좌우 드래그로 탐색 · 위로 스크롤하여 접기';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+ if(phase==='animation'){if(returning)unfold=Math.max(0,unfold-dt/LAUNCH_END);else unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
+ if(phase==='animation'&&unfold===0&&unfoldTarget===0){returning=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
+ if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;gate=true;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
  for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=phase==='animation'?want:mix(lift[i],want,1-Math.exp(-dt*14))}
@@ -184,6 +184,7 @@ function enterTransition(){
 }
 function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
 function navigate(delta,axis='y'){
+ if(returning)return;
  if(!delta||!['intro','animation','explore'].includes(phase))return;
  if(axis==='x'){
   if(phase==='explore')target=clamp(target+delta,0,N-1);
@@ -196,23 +197,24 @@ function navigate(delta,axis='y'){
 function reset(){gate=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
 function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
-$('close').onclick=close;
-function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}}
+$('close').onclick=close;$('fold').onclick=()=>{if(phase==='explore'){enterTransition();unfoldTarget=0;gate=false;returning=true;}};
+function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-let wheelAxis=null;
+let wheelAxis=null,returning=false;
 scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
- const now=performance.now(),gap=now-lastWheel;
- if(gap>180||!wheelAxis)wheelAxis=e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)?'x':'y';
- lastWheel=now;
- let delta=wheelAxis==='x'?(e.shiftKey&&Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX):e.deltaY;
+ const now=performance.now(),gap=now-lastWheel;lastWheel=now;
+ if(returning)return;
+ if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
+ const gallery=phase==='explore';
+ let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):e.deltaY;
  if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
  const units=clamp(delta/105,-1.5,1.5);
- if(wheelAxis==='x'&&phase==='explore'){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
- navigate(units,wheelAxis);
+ if(gallery){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
+ navigate(units,gallery?'x':'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
- if(!['intro','animation','explore'].includes(phase)||e.target.closest('#nav,button')&&e.target.closest('#nav')||e.button!==0)return;
+ if(returning||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
@@ -220,8 +222,8 @@ window.addEventListener('pointermove',e=>{
  if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true;scene.classList.add('dragging')}
  if(!drag.axis)return;
  const now=performance.now(),m=measure();
- if(drag.axis==='y')navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
- if(drag.axis==='x'&&phase==='explore'){const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
+ if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
+ if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),0,N-1)}velocity=0}drag=null;scene.classList.remove('dragging')}

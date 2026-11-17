@@ -151,3 +151,5 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #scene[data-phase=explore] #curve{stroke-opacity:.6}
 
 #scene{touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}#scene[data-phase=explore] #layers{cursor:grab}#scene.dragging,#scene.dragging #layers{cursor:grabbing}
+
+#fold[hidden]{display:none!important}#fold{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #758c9c66;border-radius:30px;background:#ffffff39;letter-spacing:0;font-size:12px;pointer-events:auto}#fold:hover{background:#ffffffa0}#fold:focus-visible{outline:2px solid #4389b3;outline-offset:3px}
