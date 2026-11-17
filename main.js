@@ -67,9 +67,11 @@ function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opaci
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
 function anchorAt(i,m,f=focus){
- const d=i-f,small=mobile(),step=small?.29:.102;
- const x=m.W*(.5+d*step),t=(x/m.W-.5);
- return {x,y:m.viewportH*(.27+.30*t*t-.12*t)-m.topInset};
+ const t=.5+(i-f)*(mobile()?.34:.84/(N-1));
+ const x=m.W*t;
+ // The reference's steep lower-left to almost horizontal upper-right arc.
+ const q=t, y=m.viewportH*(.15+.62*Math.pow(1-q,2))-m.topInset;
+ return {x,y};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
 function topCenter(p,m){const ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,a=m.h*p.scale*Math.sin(rz),b=-m.h*p.scale*Math.cos(rz);const z=p.z-a*Math.sin(ry);const v=project(p.x+a*Math.cos(ry),p.y+b,z,m);return {x:v[0],y:v[1]}}
@@ -88,12 +90,9 @@ function currentDot(u,m){return flight(u,m)}
  // Keep the planes parallel, like the supplied blue bank-card reference.
 // Common track geometry, continuous through the intro-to-gallery handoff.
 function archivePose(i,m,f=focus,amount=1){
- const d=i-f,small=mobile(),a=anchorAt(i,m,f),emphasis=clamp(lift[i]/100)*amount;
- const theta=Math.atan(d*.24),depth=(small?70:105)-Math.abs(d)*(small?22:33)+emphasis*45;
- const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-depth);
- const projectedH=Math.min(m.viewportH*(small?.34:.43),m.h*1.08)*(1-.035*Math.min(Math.abs(d),5));
- const p={x:a.x,y:a.y+m.h,z:depth,ry:-31+theta*12,rz:-13+theta*6,fall:0,opacity:small?clamp(1-(Math.abs(d)-1.8)*.6):clamp(1-(Math.abs(d)-4.8)*.6),scale:projectedH/(m.h*k)};
- return alignTop(p,m,i,a.x,a.y+(small?66:78)-emphasis*40);
+ const d=i-f,t=clamp(.5+d*.84/(N-1)),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
+ const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
+ return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48));
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -168,7 +167,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
 
  }
  opticalRender(m);
- svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.30*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
+ svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.62*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
  $('counter').textContent=(Math.round(focus)+1)+' / '+N;$('prev').disabled=target<=0;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
