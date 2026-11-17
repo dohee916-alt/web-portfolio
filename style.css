@@ -100,3 +100,12 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 #detail #projectTitle{font-size:clamp(28px,4vw,62px);margin-top:14px;margin-bottom:24px}
 #detail #projectDesc{line-height:1.85}
 @media(max-width:600px){#detail #category{margin-top:48px}#detail #projectTitle{font-size:30px;margin-bottom:14px}#detail #projectDesc{font-size:13px}#detail>*{margin-left:24px;margin-right:24px}}
+
+/* Keep the struck circle visibly attached to the card throughout the push. */
+#layers .anchor:before{width:14px;height:14px;margin:0;position:absolute;top:-2px;left:50%;transform:translateX(-50%);border:1.5px solid #4389b3;background:#e7f7ff;box-shadow:none}
+#layers .anchor{width:22px;height:14px;transition:none}
+#layers .anchor.active:before{box-shadow:0 0 0 4px #559bc333}
+#scene[data-phase=opening] .anchor.picked,#scene[data-phase=closing] .anchor.picked{opacity:1;z-index:1000}
+#scene .anchor.picked.absorbed{opacity:0!important}
+#scene .anchor.picked span,#scene .anchor.picked b{opacity:0}
+#scene[data-phase=opening] #curve,#scene[data-phase=closing] #curve{opacity:.75}
