@@ -120,7 +120,7 @@ const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATI
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,0,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),0,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
  if(phase==='animation'&&unfold===0&&unfoldTarget===0){setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
- if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;gate=true;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 드래그하고 중앙 레이어를 선택하세요.':'스크롤하여 탐색하고 중앙 레이어를 선택하세요.';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+ if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;gate=false;setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'좌우 드래그로 탐색 · 위로 스크롤하여 접기';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
  for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=phase==='animation'?want:mix(lift[i],want,1-Math.exp(-dt*14))}
@@ -174,48 +174,59 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
  requestAnimationFrame(frame)
 }
-function enterTransition(){if(phase==='intro'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true;}scene.classList.remove('intro-card-hover')}
-function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
-function navigate(delta){
- if(!delta)return;
- if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus}
- if(phase==='animation'){unfoldTarget=clamp(unfoldTarget+delta/RANGE);return}
- if(phase!=='explore'||gate)return;
- target=clamp(target+delta,0,N-1);
+function enterTransition(){
+ if(phase==='explore'){
+  returnFocus=focus;target=focus;velocity=0;scrollSpeed=0;wheelAt=0;
+  unfold=unfoldTarget=1;gate=false;
+ }
+ if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
+ scene.classList.remove('intro-card-hover');
 }
-function reset(){gate=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'카드를 터치하거나 드래그하세요.':'카드를 클릭하거나 스크롤하세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
+function navigate(delta,axis='y'){
+ if(!delta||!['intro','animation','explore'].includes(phase))return;
+ if(axis==='x'){
+  if(phase==='explore')target=clamp(target+delta,0,N-1);
+  return;
+ }
+ if(phase==='explore'){if(delta>=0)return;enterTransition()}
+ if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus}
+ if(phase==='animation')unfoldTarget=clamp(unfoldTarget+delta/RANGE);
+}
+function reset(){gate=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
 function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
 $('close').onclick=close;
-function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}else navigate(d)}
+function step(d){if(phase==='explore'){target=clamp(Math.round(target)+d,0,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
+let wheelAxis=null;
 scene.addEventListener('wheel',e=>{
- if(!['intro','animation','explore'].includes(phase)||mobile())return;e.preventDefault();
- const now=performance.now(),gap=now-lastWheel;lastWheel=now;
- if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
- const intro=phase!=='explore';let delta=intro?e.deltaY:(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY);
+ if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
+ const now=performance.now(),gap=now-lastWheel;
+ if(gap>180||!wheelAxis)wheelAxis=e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)?'x':'y';
+ lastWheel=now;
+ let delta=wheelAxis==='x'?(e.shiftKey&&Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX):e.deltaY;
  if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
- const units=clamp(delta/105,-1.5,1.5);if(!intro){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
- navigate(units);
+ const units=clamp(delta/105,-1.5,1.5);
+ if(wheelAxis==='x'&&phase==='explore'){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
+ navigate(units,wheelAxis);
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
- if(['intro','animation','explore'].includes(phase)&&mobile()&&!e.target.closest('#nav')){
-  const stage=phase==='explore'?'gallery':'intro';if(stage==='gallery')gate=false;
-  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,stage,axis:null,lastY:e.clientY};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
- }
+ if(!['intro','animation','explore'].includes(phase)||e.target.closest('#nav,button')&&e.target.closest('#nav')||e.button!==0)return;
+ drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
  if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
- if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true}
+ if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true;scene.classList.add('dragging')}
  if(!drag.axis)return;
  const now=performance.now(),m=measure();
- if(drag.stage==='intro'&&drag.axis==='y'&&phase!=='explore')navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16));
- if(drag.stage==='gallery'&&drag.axis==='x'&&phase==='explore'){const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta);velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
+ if(drag.axis==='y')navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
+ if(drag.axis==='x'&&phase==='explore'){const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
-function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.stage==='gallery'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),0,N-1)}velocity=0}drag=null}
+function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),0,N-1)}velocity=0}drag=null;scene.classList.remove('dragging')}
 scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
 scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1)});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);

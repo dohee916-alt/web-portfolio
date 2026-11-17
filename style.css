@@ -149,3 +149,5 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 /* Scrubbed transition: timeline appears only as the shared track settles. */
 #scene[data-phase=animation]{touch-action:none;overscroll-behavior:none}
 #scene[data-phase=explore] #curve{stroke-opacity:.6}
+
+#scene{touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}#scene[data-phase=explore] #layers{cursor:grab}#scene.dragging,#scene.dragging #layers{cursor:grabbing}
