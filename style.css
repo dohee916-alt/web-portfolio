@@ -32,3 +32,32 @@ header{padding:30px 4.5vw;font-size:10px;font-weight:600;letter-spacing:.18em}he
 .anchor{font-size:10px;letter-spacing:.04em;color:#355a75}.anchor b{font-size:11px;font-weight:500;letter-spacing:-.015em}.anchor:before{width:4px;height:4px;background:#456e8c}.anchor.active:before{box-shadow:0 0 0 6px #559bc333}#curve{stroke:#648aa7;stroke-opacity:.5;stroke-width:1}
 #begin{font-size:11px;letter-spacing:.12em;border-bottom:1px solid #55788e;padding:8px 0}#nav{font-size:11px}#nav button{padding:6px 12px}#detail{padding-top:18vh}#projectTitle{font-weight:500;line-height:1.05;font-size:clamp(32px,5vw,72px);letter-spacing:-.065em}#category{font-size:11px;text-transform:uppercase;letter-spacing:.14em}#projectDesc{font-size:14px;line-height:1.8}#detail #placeholder{font-size:12px;letter-spacing:.02em;color:#4c6f87}#close{border:0;font-size:25px}
 @media(max-width:600px){:root{--w:145px}.heading{top:13%}#world{inset:28% 0 14%}#detail{padding:3vh 7vw}}
+
+
+/* Continuous curved sheet geometry and shared archive coordinates. */
+#layers{transform-style:preserve-3d}
+.layer,.layer.fallen,.layer.explore,.layer.selected{position:absolute;left:0;top:0;transform-origin:50% 100%;background:none!important;border:0!important;box-shadow:none!important;transition:none!important;padding:0;overflow:visible;display:block;transform-style:preserve-3d;backface-visibility:visible}
+.layer:before{display:none}
+.sheet{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.sheet-strip{position:absolute;left:0;top:0;width:100%;transform-origin:center center;backface-visibility:visible;background-image:linear-gradient(115deg,#f8fdff89 0%,#ffffff22 25%,#a0c9e350 50%,#f4fbff80 77%,#95b7d450 100%);background-size:100% calc(var(--count)*100%);background-position:0 calc(var(--strip)*100%/(var(--count) - 1));border-left:1px solid #faffffe0;border-right:2px solid #6487a780}
+.sheet-strip:first-child{border-top:1px solid #fff}
+.sheet-strip:last-child{border-bottom:1px solid #5479939c}
+.layer:focus-visible{outline:1px solid #386d99;outline-offset:4px}
+#scene[data-phase=opening] .layer:not(.selected),#scene[data-phase=detail] .layer:not(.selected){opacity:revert!important}
+#curve{overflow:visible;transition:opacity .32s}
+.anchor{left:0;top:0;transform:translate(-50%,var(--bump,0px));padding:0;border:0;background:none;transition:opacity .25s;z-index:300;pointer-events:none;cursor:pointer}
+#scene[data-phase=explore] .anchor{pointer-events:auto;opacity:1}
+#scene[data-phase=opening] .anchor,#scene[data-phase=detail] .anchor,#scene[data-phase=closing] .anchor{opacity:0;pointer-events:none}
+#scene[data-phase=animation] .heading{opacity:0;transition:opacity .3s}
+#scene[data-phase=explore] .heading{opacity:1}
+#scene[data-phase=closing] .heading{opacity:0}
+#world{transition:none;perspective-origin:50% 40%}
+#scene[data-phase=opening] #world,#scene[data-phase=detail] #world{animation:camera-rise .72s cubic-bezier(.2,.7,.2,1) both}
+#scene[data-phase=closing] #world{animation:camera-return .65s ease both}
+@keyframes camera-rise{from{transform:translateY(0)}to{transform:translateY(-3vh)}}
+@keyframes camera-return{from{transform:translateY(-3vh)}to{transform:translateY(0)}}
+#detail{display:block!important;position:fixed;inset:0 0 0 auto;margin:0;width:45vw;height:100dvh;max-height:none;max-width:none;visibility:hidden;opacity:0;pointer-events:none;transform:translateY(20px);transition:opacity .28s,transform .28s,visibility .28s;z-index:600;background:transparent}
+#detail.visible{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0)}
+#detail #placeholder:empty{display:none}
+@media(max-width:600px){#detail{inset:auto 0 0;width:100vw;height:45dvh;background:linear-gradient(180deg,transparent,#e9f0f3 18%);padding:4vh 7vw 2vh}.anchor{white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){#world{animation:none!important}}
