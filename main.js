@@ -12,8 +12,8 @@ items.forEach((p,i)=>{
  
  card.append(shell);root.append(card);
  const anchor=document.createElement('button');anchor.type='button';anchor.className='anchor';anchor.setAttribute('aria-label',p.title);const y=document.createElement('span');y.textContent=p.year;const title=document.createElement('b');title.textContent=p.title;anchor.append(y,title);root.append(anchor);
- const select=()=>{if(phase==='intro'&&i===0){start();return}if(performance.now()<blockClick||phase!=='explore')return;open(i)};
- card.addEventListener('click',select);anchor.addEventListener('click',()=>{if(phase==='explore'&&performance.now()>blockClick){open(i)}});
+ const select=()=>{if(phase==='intro'&&i===0){start();return}if(performance.now()<blockClick||phase!=='explore')return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)};
+ card.addEventListener('click',select);anchor.addEventListener('click',()=>{if(phase==='explore'&&performance.now()>blockClick){if(i!==Math.round(focus)){target=i;wheelAt=0}else open(i)}});
  card.addEventListener('focus',()=>{if(phase==='explore'&&!mobile()){target=i;wheelAt=0}});
  cards.push({card,shell,strips});anchors.push(anchor);lift.push(0);
 });
@@ -24,7 +24,7 @@ items.forEach((p,i)=>{
    gallery (damped continuous navigation), radial-gallery (spatial picking).
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
-const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=reduced?0:940,CLOSE_MS=reduced?0:350;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
+const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
  const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
@@ -59,7 +59,7 @@ function opticalRender(m){
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
-scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;open(i)});
+scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
@@ -99,7 +99,19 @@ function panelTarget(m){
  return mobile()?{x:18,y:H*.52,w:W-36,h:H*.43}:{x:W*.56,y:H*.20,w:W*.365,h:H*.62};
 }
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
-function renderPanel(){/* The former right-side summary card has been removed. */}
+function renderPanel(m,u){
+ if(!impactAnchor||u<PUSH){detail.classList.remove('morphing','visible','content-ready');return}
+ const t=ease(clamp((u-PUSH)/(.94-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(PUSH,m);
+ // Keep the launch point inside the growing surface: first open the mouth,
+ // then unfurl the entire reading area from that point.
+ const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,ease(clamp((u-PUSH-.025)/(.92-PUSH-.025))));
+ const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
+ detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,20,t)+'px';
+ const ox=clamp(dot.x-x,0,w),oy=clamp(dot.y+m.topInset-y,0,h);
+ detail.style.setProperty('--origin-x',ox+'px');detail.style.setProperty('--origin-y',oy+'px');
+ detail.style.setProperty('--reveal',String(ease(clamp((u-.56)/.38))));
+ detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.58);detail.classList.toggle('visible',phase==='detail');
+}
 function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return o}
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
@@ -133,7 +145,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
      }else{
       // Recoil, then peel away: the dot has its own much faster trajectory.
       const t=clamp((u-HIT)/(1-HIT)),q=1-Math.pow(1-t,3);
-      const dest={...p,x:m.W*.5,y:m.viewportH*.49-m.topInset,z:120,ry:0,rz:0,scale:mobile()?1.08:1.22,opacity:1-ease(clamp((t-.26)/.66))};
+      const dest={...p,x:m.W*(mobile()?.5:.27),y:m.viewportH*(mobile()?.48:.78)-m.topInset,z:120,ry:-13,rz:-7,scale:mobile()?1.10:1.26,opacity:1};
       p=between(contact,dest,q);
       p.y+=Math.sin(Math.PI*clamp(t/.24))*Math.min(24,m.H*.045)*(t<.24?1:0);
      }
@@ -158,7 +170,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=phase==='explore'&&focus<-.965?anchorAt(-1,m,focus+1.65):anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.62*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
  const back=$('fold'),ba=anchorAt(-1,m,focus+1.65),br=root.getBoundingClientRect();back.hidden=phase!=='explore'||focus>-.965||target>-.965;back.style.left=(br.left+ba.x)+'px';back.style.top=(br.top+ba.y+5)+'px';const tangent=Math.atan2(midY-a0.y,midX-a0.x)*180/Math.PI;back.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
- if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false');$('projectPeel').classList.remove('is-active');$('readerScroll').focus({preventScroll:true})}
+ if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
  requestAnimationFrame(frame)
 }
@@ -170,7 +182,7 @@ function enterTransition(){
  if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
  scene.classList.remove('intro-card-hover');
 }
-function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=1;launchLocked=true}
+function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
 function navigate(delta,axis='y'){
  if(returning||launchLocked)return;
  if(!delta||!['intro','animation','explore'].includes(phase))return;
@@ -179,63 +191,12 @@ function navigate(delta,axis='y'){
   return;
  }
  if(phase==='explore'){if(delta>=0)return;enterTransition()}
- if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus;unfoldTarget=1;launchLocked=true;return}
+ if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus}
  if(phase==='animation')unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,LAUNCH_START/LAUNCH_END);
 }
 function reset(){gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
-
-let pdfRequest=0;
-async function loadPortfolioPdf(item){
- const ticket=++pdfRequest,pages=$('pdfPages'),status=$('pdfStatus');
- pages.replaceChildren();
- if(!item.pdf){status.textContent='PDF 포트폴리오 파일을 연결할 예정입니다.';return}
- if(!window.pdfjsLib){status.textContent='PDF 뷰어를 불러오지 못했습니다.';return}
- status.textContent='포트폴리오를 불러오는 중입니다…';
- let doc;
- try{
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  doc=await pdfjsLib.getDocument({url:item.pdf}).promise;
-  if(ticket!==pdfRequest)return;
-  for(let n=1;n<=doc.numPages;n++){
-   if(ticket!==pdfRequest)break;
-   const page=await doc.getPage(n),base=page.getViewport({scale:1});
-   const displayWidth=Math.min(920,Math.max(260,window.innerWidth-32));
-   const ratio=Math.min(window.devicePixelRatio||1,2);
-   const view=page.getViewport({scale:displayWidth/base.width*ratio});
-   const canvas=document.createElement('canvas');canvas.className='pdf-page';
-   canvas.setAttribute('aria-label',n+' / '+doc.numPages+' 페이지');
-   canvas.width=Math.ceil(view.width);canvas.height=Math.ceil(view.height);
-   canvas.style.width=Math.round(view.width/ratio)+'px';
-   canvas.style.height=Math.round(view.height/ratio)+'px';
-   pages.append(canvas);
-   await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport:view}).promise;
-   if(ticket===pdfRequest)status.textContent='';
-  }
- }catch(error){
-  if(ticket===pdfRequest)status.textContent='PDF를 표시하지 못했습니다. 파일 경로와 접근 권한을 확인해 주세요.';
-  console.error('PDF viewer:',error);
- }finally{if(doc)try{await doc.destroy()}catch(e){}}
-}
-function open(i){
- if(phase!=='explore')return;
- const p=items[i];target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
- impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());
- $('category').textContent=p.category==='Perspective'?'PERSONAL ARCHIVE':'PROJECT PORTFOLIO';
- $('projectTitle').textContent=p.title;
- const image=$('projectSymbol'),pending=$('symbolPending');image.hidden=!p.symbol;pending.hidden=!!p.symbol;
- if(p.symbol){image.src=p.symbol;image.alt=p.title+' 상징물'}
- $('readerScroll').scrollTop=0;detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');
- $('projectPeel').classList.remove('is-active');void $('projectPeel').offsetWidth;$('projectPeel').classList.add('is-active');
- loadPortfolioPdf(p);
- openedAt=performance.now();setPhase('opening');
-}
-function close(){
- if(phase!=='detail'&&phase!=='opening')return;
- pdfRequest++;$('pdfPages').replaceChildren();$('pdfStatus').textContent='';
- closeFrom=detailProgress(performance.now());detail.classList.remove('visible');
- detail.setAttribute('aria-hidden','true');$('projectPeel').classList.remove('is-active');
- closingAt=performance.now();setPhase('closing');
-}
+function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
+function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
 $('close').onclick=close;$('fold').onclick=()=>{if(phase==='explore'){enterTransition();unfoldTarget=0;gate=false;returning=true;}};
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
