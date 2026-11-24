@@ -228,3 +228,7 @@ header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:foc
 
 /* Fade only the visible portions of anchors at the viewport boundary. */
 #scene[data-phase=explore] .anchor:not(.active){opacity:calc(.88 * var(--edge-fade,1))}
+
+/* Suppress native selection and tap highlight on the mobile grabber only. */
+header #fold.mobile-fold,header #fold.mobile-fold::after,header #fold.mobile-fold *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
