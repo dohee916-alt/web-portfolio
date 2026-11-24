@@ -184,7 +184,7 @@ function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
 }
-const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35;
+const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
 function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
@@ -202,7 +202,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  for(let i=0;i<N;i++){
   let p=introPose(i,m);
   if(phase==='animation'){
-   if(i<N-1){
+   if(i<N){
     const fall=ease((time-i*FALL_STAGGER)/FALL_DURATION);
     p.fall=fall;p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
    }
