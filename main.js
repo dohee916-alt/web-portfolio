@@ -157,8 +157,8 @@ function archivePose(i,m,f=focus,amount=1){
  return alignTop(p,m,i,a.x+mix(Math.min(m.galleryW*.16,25),0,m.compact),a.y+mix(Math.max(35,88-lift[i]*amount*.48)*k,compactGap,m.compact));
 }
 function panelTarget(m){
- const W=m.W,H=m.viewportH,w=Math.min(W*(mobile()?.92:.86),H*.72*16/9),h=w*9/16;
- return {x:(W-w)/2,y:(H-h)/2,w,h};
+ const W=m.W,H=m.viewportH,pad=clamp(W*.018,8,22),iw=Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
+ return {x:(W-w)/2,y:(H-h)/2,w,h,pad};
 }
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
 function renderPanel(m,u){
@@ -167,8 +167,9 @@ function renderPanel(m,u){
  const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,t);
  const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
  detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,2,t)+'px';
- detail.style.setProperty('--reveal',String(ease(clamp((u-.90)/.10))));
- detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.90);detail.classList.toggle('visible',phase==='detail');
+ detail.style.setProperty('--paper-pad',dest.pad+'px');
+ detail.style.setProperty('--reveal',String(ease(clamp((u-.76)/.24))));
+ detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.76);detail.classList.toggle('visible',phase==='detail');
 }
 function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return o}
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
@@ -284,24 +285,56 @@ function navigate(delta,axis='y'){
 function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
 const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
-let raonSlideIndex=0,raonTouchStart=null;
-function renderRaonSlide(){
- const image=$('raonSlide');detail.classList.remove('slide-loaded');image.style.visibility='hidden';
- image.src=RAON_SLIDES[raonSlideIndex];
- image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
- image.onerror=()=>{image.style.visibility='hidden';detail.classList.remove('slide-loaded');};
- image.onload=()=>{image.style.visibility='visible';detail.classList.add('slide-loaded');};
- $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
- $('raonPrev').disabled=raonSlideIndex===0;
- $('raonNext').disabled=raonSlideIndex===RAON_SLIDES.length-1;
+let raonSlideIndex=0,raonTouchStart=null,slideBusy=false,slideEpoch=0;
+const pageCache=new Map();
+function preparePage(i){
+ if(!pageCache.has(i)){
+  const img=new Image();img.src=RAON_SLIDES[i];
+  const ready=img.decode().then(()=>img).catch(err=>{pageCache.delete(i);throw err});
+  pageCache.set(i,ready);
+ }
+ return pageCache.get(i);
 }
-function moveRaonSlide(direction){
- if(!detail.classList.contains('has-slides')||!['detail','opening'].includes(phase))return;
- const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);
- if(next===raonSlideIndex)return;
- raonSlideIndex=next;
- const img=$('raonSlide');img.classList.remove('page-enter');void img.offsetWidth;img.classList.add('page-enter');
- renderRaonSlide();
+function updatePageNav(){
+ $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
+ $('raonPrev').disabled=slideBusy||raonSlideIndex===0;
+ $('raonNext').disabled=slideBusy||raonSlideIndex===RAON_SLIDES.length-1;
+}
+function warmPages(i){for(const j of [i-1,i+1])if(j>=0&&j<RAON_SLIDES.length)preparePage(j).catch(()=>{})}
+async function renderRaonSlide(){
+ const epoch=++slideEpoch;slideBusy=true;updatePageNav();
+ const media=$('raonReader').querySelector('.raon-reader-media');media.querySelectorAll('.page-turn-copy').forEach(el=>el.remove());
+ const image=$('raonSlide');image.getAnimations().forEach(a=>a.cancel());
+ try{
+  const ready=await preparePage(raonSlideIndex);
+  if(epoch!==slideEpoch||!detail.classList.contains('has-slides'))return;
+  image.src=ready.src;image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
+  await image.decode();
+  if(epoch!==slideEpoch||!detail.classList.contains('has-slides'))return;
+  image.style.visibility='visible';detail.classList.add('slide-loaded');warmPages(raonSlideIndex);
+ }catch(err){if(epoch===slideEpoch)detail.classList.remove('slide-loaded')}
+ finally{if(epoch===slideEpoch){slideBusy=false;updatePageNav()}}
+}
+async function moveRaonSlide(direction){
+ if(slideBusy||!detail.classList.contains('has-slides')||phase!=='detail')return;
+ const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);if(next===raonSlideIndex)return;
+ const epoch=slideEpoch;slideBusy=true;updatePageNav();
+ let overlay;
+ try{
+  const ready=await preparePage(next);
+  if(epoch!==slideEpoch||phase!=='detail')return;
+  const old=$('raonSlide'),media=old.parentElement;
+  overlay=old.cloneNode();overlay.removeAttribute('id');overlay.className='page-turn-copy';overlay.setAttribute('aria-hidden','true');media.append(overlay);
+  old.src=ready.src;await old.decode();
+  if(epoch!==slideEpoch||phase!=='detail')return;
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const side=direction>0?-1:1;
+  overlay.style.transformOrigin=direction>0?'left center':'right center';
+  const animation=overlay.animate([{transform:'perspective(1100px) rotateY(0deg) translateX(0)',opacity:1},{transform:'perspective(1100px) rotateY('+side*38+'deg) translateX('+side*8+'%)',opacity:1,offset:.55},{transform:'perspective(1100px) rotateY('+side*82+'deg) translateX('+side*18+'%)',opacity:0}],{duration:reduced?0:460,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
+  await animation.finished;
+  if(epoch!==slideEpoch)return;
+  raonSlideIndex=next;old.alt='라온이음 포트폴리오 '+(next+1)+' / 6 페이지';warmPages(next);
+ }catch(err){}finally{overlay?.remove();if(epoch===slideEpoch){slideBusy=false;updatePageNav()}}
 }
 $('raonPrev').addEventListener('click',()=>moveRaonSlide(-1));
 $('raonNext').addEventListener('click',()=>moveRaonSlide(1));
@@ -319,7 +352,7 @@ function open(i){
  if(phase!=='explore')return;
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());
- const p=items[i],isRaon=p.title==='라온이음';
+ const p=items[i],isRaon=p.title==='라온이음';++slideEpoch;slideBusy=false;
  detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',isRaon);
  $('raonReader').hidden=!isRaon;detail.classList.remove('slide-loaded');
  $('category').textContent=p.category;
