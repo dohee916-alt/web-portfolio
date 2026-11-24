@@ -392,7 +392,10 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 @keyframes seed-breathe{0%,100%{opacity:.48}50%{opacity:.85}}
 @media(prefers-reduced-motion:reduce){#seedStage[data-growth=seed] .seed-halo{animation:none}}
 
-/* Debossed lettering: both lines share the leaf's recessed pigment. */
-#contactLeafSurface .contact-copy{color:#36543a;--engraved-ink:#36543a;--engraved-shadow:rgba(34,58,34,.35);--engraved-light:rgba(250,255,226,.62)}
-#contactLeafSurface .contact-copy .contact-kicker,#contactLeafSurface .contact-copy h2,#contactLeafSurface .contact-copy a{color:var(--engraved-ink);opacity:1;text-shadow:0 -0.55px 0 var(--engraved-shadow),0 0.8px 0 var(--engraved-light);font-weight:400}
-#contactLeafSurface .contact-copy a:hover{text-decoration:underline;text-decoration-color:#36543a88;text-underline-offset:4px}
+/* Recessed lettering: light lower bevel, dark upper bevel, leaf-toned interior. */
+#contactLeafSurface .contact-copy{color:#60774b;--engraved-ink:#60774b;transform:translateY(-13px)}
+#contactLeafSurface .contact-copy .contact-kicker,#contactLeafSurface .contact-copy h2,#contactLeafSurface .contact-copy a{color:var(--engraved-ink);opacity:1;font-weight:400;text-shadow:none}
+#contactLeafSurface .contact-copy .contact-kicker,#contactLeafSurface .contact-copy a{filter:url(#leafEngrave)}
+#contactLeafSurface .contact-copy a:hover{text-decoration:underline;text-decoration-color:#60774b88;text-underline-offset:4px}
+#contactDialog #contactClose:focus{outline:none}
+#contactDialog #contactClose:focus-visible{outline:none;text-shadow:0 0 5px #f4eedc88}
