@@ -322,11 +322,12 @@ async function renderRaonSlide(){
 // Project a flexible sheet strip by strip, including perspective along its height.
 function turnPaper(canvas,front,back,direction,epoch){
  const media=$('raonSlide').parentElement,W=media.clientWidth,H=media.clientHeight;
- const pad=Math.ceil(Math.max(W,H)*.4),dpr=Math.min(devicePixelRatio||1,2);
+ const pad=Math.ceil(Math.max(W,H)*.65),dpr=Math.min(devicePixelRatio||1,2);
  canvas.width=Math.ceil((W+2*pad)*dpr);canvas.height=Math.ceil((H+2*pad)*dpr);
  Object.assign(canvas.style,{left:-pad+'px',top:-pad+'px',width:W+2*pad+'px',height:H+2*pad+'px'});
- const g=canvas.getContext('2d'),N=100,cam=Math.max(W*2.5,650),sign=direction>0?1:-1;
- const project=(x,y,z)=>{const k=cam/(cam-z);return [W/2+(x-W/2)*k,H/2+(y-H/2)*k]};
+ const g=canvas.getContext('2d'),N=64,cam=Math.max(W*3.5,800);
+ // Perspective is anchored at the fixed left binding, not the page centre.
+ const project=(x,y,z)=>{const k=cam/(cam-z);return [x*k,H/2+(y-H/2)*k]};
  function triangle(img,s0,s1,s2,d0,d1,d2){
   const ax=s1[0]-s0[0],ay=s1[1]-s0[1],bx=s2[0]-s0[0],by=s2[1]-s0[1],det=ax*by-ay*bx;
   if(Math.abs(det)<1e-9)return;
@@ -339,25 +340,25 @@ function turnPaper(canvas,front,back,direction,epoch){
   const start=performance.now(),duration=1050;
   function frameTurn(now){
    if(epoch!==slideEpoch||phase!=='detail'){resolve(false);return}
-   const t=clamp((now-start)/duration),q=t*t*(3-2*t);
+   const t=clamp((now-start)/duration),progress=t*t*(3-2*t),q=direction>0?progress:1-progress;
    g.setTransform(dpr,0,0,dpr,pad*dpr,pad*dpr);g.clearRect(-pad,-pad,W+2*pad,H+2*pad);
    // Moving bend travels from the free edge toward the hinge.
-   const nodes=[],bend=Math.sin(Math.PI*q),radius=1.15;
+   const nodes=[],bend=Math.sin(Math.PI*q),radius=.95;
    let x=0,z=0;
    for(let j=0;j<=N;j++){
     const u=j/N;
-    if(j){const v=(j-.5)/N,angle=Math.PI*q+bend*radius*(v-.5);x+=Math.cos(angle)*W/N;z+=Math.sin(angle)*W/N;}
-    const drift=-W*.22*q*q,xx=sign>0?x+drift:W-x-drift;
+    if(j){const v=(j-.5)/N,angle=Math.PI*.5*q+bend*radius*(v-.5);x+=Math.cos(angle)*W/N;z+=Math.sin(angle)*W/N;}
+    const xx=x;
     const lift=Math.sin(Math.PI*u)*bend*H*.035;
     nodes.push({u,x:xx,z,top:project(xx,-lift,z),bottom:project(xx,H+lift,z)});
    }
    // Paint the turning sheet over the already decoded next page.
    const strips=Array.from({length:N},(_,j)=>j).sort((a,b)=>nodes[a].z+nodes[a+1].z-nodes[b].z-nodes[b+1].z);
-   g.globalAlpha=1-ease(clamp((t-.85)/.15));
+   g.globalAlpha=1;
    for(const j of strips){
-    const a=nodes[j],b=nodes[j+1],face=(b.x-a.x)*sign>=0;
+    const a=nodes[j],b=nodes[j+1],face=b.x-a.x>=0;
     const img=front,sw=img.naturalWidth,sh=img.naturalHeight;
-    const u0=(sign>0?a.u:1-a.u)*sw,u1=(sign>0?b.u:1-b.u)*sw;
+    const u0=a.u*sw,u1=b.u*sw;
     if(face){
      triangle(img,[u0,0],[u1,0],[u1,sh],a.top,b.top,b.bottom);
      triangle(img,[u0,0],[u1,sh],[u0,sh],a.top,b.bottom,a.bottom);
@@ -385,10 +386,10 @@ async function moveRaonSlide(direction){
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
    overlay=document.createElement('canvas');overlay.className='page-turn-mesh';overlay.setAttribute('aria-hidden','true');media.append(overlay);
    // Keep the old page in place until the first canvas frame is ready.
-   const turn=turnPaper(overlay,front,ready,direction,epoch);
-   await new Promise(requestAnimationFrame);
-   old.src=ready.src;await old.decode();
+   const turn=turnPaper(overlay,direction>0?front:ready,direction>0?ready:front,direction,epoch);
+   if(direction>0){await new Promise(requestAnimationFrame);old.src=ready.src;await old.decode()}
    if(!await turn)return;
+   if(direction<0){old.src=ready.src;await old.decode()}
   }else{old.src=ready.src;await old.decode()}
   if(epoch!==slideEpoch||phase!=='detail')return;
   raonSlideIndex=next;old.alt='라온이음 포트폴리오 '+(next+1)+' / 6 페이지';warmPages(next);
