@@ -180,7 +180,13 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
-function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt&&now-wheelAt>100){target=clamp(Math.round(focus),-1,N-1);wheelAt=0;scrollSpeed=0;wheelDirection=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?40:18)));if(Math.abs(focus-target)<.001)focus=target;
+function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt){
+ const idle=now-wheelAt;
+ if(idle>190){
+  if(Math.abs(scrollSpeed)>.08){const decay=Math.exp(-dt*9);target=clamp(target+scrollSpeed*(1-decay)/9,-1,N-1);scrollSpeed*=decay;if((target===-1&&scrollSpeed<0)||(target===N-1&&scrollSpeed>0))scrollSpeed=0}
+  if(Math.abs(scrollSpeed)<=.08&&Math.abs(target-focus)<.035){target=clamp(Math.round(target),-1,N-1);wheelAt=0;scrollSpeed=0;wheelDirection=0}
+ }
+}focus=mix(focus,target,1-Math.exp(-dt*(drag?35:wheelAt?26:10)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+playDt/3);unfoldTarget=1}
@@ -473,12 +479,18 @@ scene.addEventListener('wheel',e=>{
  if(gallery){
   if(!delta)return;
   const direction=Math.sign(delta);
-  if(!wheelAt||direction!==wheelDirection){target=focus;scrollSpeed=0;velocity=0}
+  const fresh=!wheelAt||gap>190;
+  if(fresh){scrollSpeed=0;velocity=0;target=focus+(target-focus)*.35}
+  if(wheelDirection&&direction!==wheelDirection){target=focus+(target-focus)*.15;scrollSpeed=0}
   wheelDirection=direction;
-  // Small trackpad inputs remain precise; strong inputs can still traverse multiple cards.
-  const magnitude=Math.abs(delta),gain=mix(.68,1.12,ease(clamp((magnitude-12)/100)));
-  const units=direction*Math.min(1,magnitude/100*gain);
-  wheelAt=now;target=clamp(focus+clamp(target-focus+units,-1.15,1.15),-1,N-1);
+  // Unrestricted continuous travel; low-amplitude events remain precise.
+  const magnitude=Math.abs(delta),gain=mix(.85,1.15,ease(clamp((magnitude-10)/100)));
+  const units=direction*Math.min(2.2,magnitude/105*gain);
+  const eventSpeed=units*1000/Math.max(16,Math.min(190,gap));
+  // Native trackpad momentum is already in the event stream. Only a small residual coast is added.
+  const residual=clamp(eventSpeed*.18,-4.5,4.5);
+  scrollSpeed=fresh?0:mix(scrollSpeed,residual,.55);
+  wheelAt=now;target=clamp(target+units,-1,N-1);
  }else if(phase==='animation'){
   // Wheel scrubbing shares the same paused playhead as mouse-hover scrubbing.
   if(!delta||touchHold)return;
@@ -494,6 +506,7 @@ scene.addEventListener('pointerdown',e=>{
  if(e.pointerType==='touch'&&(phase==='intro'||phase==='animation'))return;
  if(phase==='intro'&&e.pointerType==='pen'&&e.isPrimary!==false){e.preventDefault();start();return}
  if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
+ if(phase==='explore'&&wheelAt){wheelAt=0;scrollSpeed=0;wheelDirection=0;target=focus}
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target,touch:e.pointerType==='touch'};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
