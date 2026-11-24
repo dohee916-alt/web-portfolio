@@ -183,8 +183,10 @@ const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATI
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
+  else if(launchLocked){unfold=Math.min(1,unfold+dt/3);unfoldTarget=1}
   else if(held()){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*24));if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
   else if(autoUnfold){const speed=1/3+releaseBoost;unfold=Math.min(1,unfold+dt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
+  if(!returning&&!launchLocked&&unfold>=DOWN_END/LAUNCH_END-.0001){launchLocked=true;clearIntroControl();unfoldTarget=1;drag=null;scene.classList.remove('dragging')}
  }
  if(phase==='animation'&&returning&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
  if(phase==='animation'&&unfold===1&&unfoldTarget===1&&!held()){clearIntroControl();autoUnfold=false;launchLocked=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
@@ -346,7 +348,7 @@ scene.addEventListener('wheel',e=>{
  navigate(units,gallery?'x':'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
- if(returning||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
+ if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
@@ -365,7 +367,7 @@ scene.addEventListener('pointermove',e=>{
  if(e.pointerType!=='mouse')return;
  const prev=mousePoint;mousePoint={clientX:e.clientX,clientY:e.clientY};
  if(phase==='intro'){scene.classList.toggle('intro-card-hover',pick(e)>=0);return}
- if(phase!=='animation'||returning||touchHold||!prev)return;
+ if(phase!=='animation'||returning||launchLocked||touchHold||!prev)return;
  const dx=e.clientX-prev.clientX,dy=e.clientY-prev.clientY;
  if(!dx&&!dy)return;
  const hit=pick(e)>=0;
@@ -373,7 +375,7 @@ scene.addEventListener('pointermove',e=>{
  if(!hoverHold){hoverHold=true;pauseIntro();return}
  unfoldTarget=clamp(unfoldTarget-dy/Math.max(160,measure().viewportH*.65),0,1);
 });
-scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'&&hoverHold){hoverHold=false;resumeIntro()}});
+scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'&&!launchLocked&&hoverHold){hoverHold=false;resumeIntro()}});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
