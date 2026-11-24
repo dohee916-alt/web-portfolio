@@ -281,3 +281,6 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 #detail.portfolio-mode.visible.slide-loaded #raonReader{pointer-events:auto}
 #detail.portfolio-mode #raonReader .raon-reader-nav{top:100%;opacity:var(--reveal,0);pointer-events:none}
 #detail.portfolio-mode.visible #raonReader .raon-reader-nav{pointer-events:auto}
+
+#stillGrowing{position:absolute;z-index:900;left:50%;top:30%;transform:translate(-50%,-100%);margin:0;color:var(--gallery-ivory,#f4eedc);font-size:clamp(16px,2vw,24px);font-weight:400;letter-spacing:-.025em;line-height:1.2;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .22s ease}
+#scene[data-phase=intro] #stillGrowing{opacity:1}
