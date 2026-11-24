@@ -37,11 +37,13 @@ for(let i=0;i<320;i++){
 const paperGrain=ctx.createPattern(grainTile,'repeat');
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
- const L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
- const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz,v=project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m);v[1]+=z*.42;return v};
- const angle=p.fall*Math.PI*.5,yy=-Math.cos(angle)*m.h,zz=Math.sin(angle)*m.h;
- L.push(convert(-m.w/2,0,0),convert(-m.w/2,yy,zz));
- R.push(convert(m.w/2,0,0),convert(m.w/2,yy,zz));
+ const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
+ let yy=0,zz=0;
+ const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz;return project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m)};
+ for(let j=0;j<=rows;j++){
+  if(j){const u=(j-.5)/rows,t=p.fall;const a=Math.PI*.5*ease(clamp(t*1.7+u*.7-.7))+Math.sin(Math.PI*t)*Math.sin(Math.PI*u)*.68;yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
+  L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz))
+ }
  return {i,L,R,p,poly:L.concat(R.slice().reverse())}
 }
 function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
