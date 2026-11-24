@@ -106,7 +106,8 @@ scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blo
 
 function measure(){
  const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
- const w=mobile()?Math.min(W*.43,185):Math.min(W*.19,260);
+ // Continuous, monotonic intro sizing across mobile and desktop widths.
+ const w=Math.min(260, W*.43, Math.max(185,W*.19));
  // Layout is determined by the available viewport, not the input device.
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
