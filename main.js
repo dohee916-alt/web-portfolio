@@ -328,7 +328,25 @@ function close(){
  detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')
 }
 $('close').onclick=close;function foldBack(){if(phase==='explore'){enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;gate=false;returning=true;}}$('fold').onclick=foldBack;
-let foldTouch=null;const foldButton=$('fold');foldButton.addEventListener('pointerdown',e=>{if(!touchLayout()||phase!=='explore'||e.isPrimary===false)return;foldTouch={id:e.pointerId,y:e.clientY};foldButton.setPointerCapture(e.pointerId)});foldButton.addEventListener('pointermove',e=>{if(foldTouch&&foldTouch.id===e.pointerId&&e.clientY-foldTouch.y>18){foldTouch=null;foldBack()}});for(const type of ['pointerup','pointercancel','lostpointercapture'])foldButton.addEventListener(type,()=>{foldTouch=null});
+let foldTouch=null;const foldButton=$('fold');
+foldButton.addEventListener('pointerdown',e=>{
+ if(!touchLayout()||phase!=='explore'||e.isPrimary===false)return;
+ foldTouch={id:e.pointerId,y:e.clientY,dy:0};foldButton.setPointerCapture(e.pointerId);
+ foldButton.classList.add('fold-grabbed');
+});
+foldButton.addEventListener('pointermove',e=>{
+ if(!foldTouch||foldTouch.id!==e.pointerId)return;
+ foldTouch.dy=Math.max(0,foldTouch.y-e.clientY);
+ foldButton.style.setProperty('--fold-pull',(-Math.min(52,foldTouch.dy*.65))+'px');
+});
+function finishFold(e){
+ if(!foldTouch||foldTouch.id!==e.pointerId)return;
+ const commit=e.type==='pointerup'&&foldTouch.dy>=28;
+ foldTouch=null;foldButton.classList.remove('fold-grabbed');foldButton.style.removeProperty('--fold-pull');
+ if(commit)foldBack();
+}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])foldButton.addEventListener(type,finishFold);
+
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 let wheelAxis=null,returning=false,launchLocked=false;
