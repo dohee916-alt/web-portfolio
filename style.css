@@ -293,3 +293,5 @@ body,button,input,select,textarea,svg text{font-family:'Maru Buri',serif}
 .anchor b{font-weight:600}
 .anchor span{font-weight:300}
 .raon-reader-nav{font-weight:400}
+
+#scene[data-phase=explore] .anchor.first-endpoint{opacity:1}
