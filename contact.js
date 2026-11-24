@@ -14,7 +14,7 @@ const CONTACT = { email: "", links: [] };
   }
   if(!container.children.length){const p=document.createElement('p');p.className='contact-preview';p.textContent='Contact details coming soon.';container.append(p)}
  }
- fill(info);fill(bloomInfo);
+ fill(info);fill(document.getElementById('bloomLinks'));
  openButton.addEventListener('click',()=>{if(!dialog.open)dialog.showModal()});
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
