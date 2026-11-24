@@ -245,3 +245,19 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 #detail:not(.raon-mode) #paperStudy button{font-size:10px;letter-spacing:.03em;border:1px solid #52644a55;border-radius:2px;padding:6px 9px;background:transparent;color:#344d39}
 #detail:not(.raon-mode) #paperStudy button[aria-pressed="true"]{background:#344d3914;border-color:#52644a}
 #detail.raon-mode #paperStudy{display:none!important}
+
+/* Shared portfolio reveal: the morphing paper itself remains behind the page. */
+#detail.portfolio-mode{position:fixed;inset:auto;margin:0;max-width:none;max-height:none;padding:0!important;overflow:visible!important;box-sizing:border-box;border:0;background:#eee9d9;box-shadow:0 12px 36px #00231630;z-index:850}
+#detail.portfolio-mode.morphing{visibility:visible;opacity:1}
+#detail.portfolio-mode.visible{pointer-events:auto}
+#detail.portfolio-mode #category,#detail.portfolio-mode #projectTitle,#detail.portfolio-mode #projectDesc,#detail.portfolio-mode #placeholder,#detail.portfolio-mode #paperStudy{display:none!important}
+#detail.portfolio-mode #raonReader{position:absolute;inset:0;margin:0!important;padding:0!important;opacity:0;transform:translateY(8px) scale(.99);pointer-events:none}
+#detail.portfolio-mode #raonReader[hidden]{display:none!important}
+#detail.portfolio-mode.content-ready.slide-loaded #raonReader{opacity:var(--reveal,0);transform:translateY(calc((1 - var(--reveal,0))*8px)) scale(calc(.99 + .01 * var(--reveal,0)));pointer-events:auto}
+#detail.portfolio-mode .raon-reader-media{width:100%;height:100%;overflow:hidden;background:transparent}
+#detail.portfolio-mode #raonSlide{display:block;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+#detail.portfolio-mode .raon-reader-nav{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:24px;margin-top:10px;color:#f4eedc;white-space:nowrap;font-size:12px}
+#detail.portfolio-mode .raon-reader-nav button{color:#f4eedc;border:0;background:none;padding:8px 12px}
+#detail.portfolio-mode .raon-reader-nav button:disabled{opacity:.3}
+#detail.portfolio-mode #close{position:absolute;top:-42px;right:0;margin:0;padding:0;width:36px;height:36px;display:grid;place-items:center;background:none;border:0;color:#f4eedc;font-size:25px;z-index:10}
+#detail.portfolio-mode.content-ready #close{opacity:var(--reveal,0);transform:none}
