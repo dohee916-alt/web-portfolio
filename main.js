@@ -348,6 +348,8 @@ scene.addEventListener('wheel',e=>{
  navigate(units,gallery?'x':'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
+ // Start on actual touch contact, without waiting for a synthesized click.
+ if(phase==='intro'&&e.pointerType!=='mouse'&&e.isPrimary!==false&&!e.target.closest('#nav, #reset, #detail')){e.preventDefault();drag=null;start();return}
  if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
