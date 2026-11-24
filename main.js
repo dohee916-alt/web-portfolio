@@ -39,25 +39,44 @@ function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(
 function mesh(p,m,i){
  const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
  let yy=0,zz=0;
- // Intro sheets rotate around their bottom edge. Use a stable oblique paper
- // view during the flip; blend back into the existing gallery perspective.
- const view=p.paperView||0, hinge=project(p.x,p.y,p.z,m);
- const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-p.z);
- const convert=(x,y,z)=>{
-  x*=p.scale;y*=p.scale;z*=p.scale;
-  const a=x*cz-y*sz,b=x*sz+y*cz,dx=a*cy+z*sy,dz=-a*sy+z*cy;
-  const v=project(p.x+dx,p.y+b,p.z+dz,m);
-  return [mix(v[0],hinge[0]+dx*k,view),mix(v[1],hinge[1]+(b+.42*dz)*k,view),v[2]];
- };
- const theta=Math.PI*.5*p.fall,edge=Math.atan2(1,.42);
- // Keep every cross-section on the same side of the edge-on angle. This
- // prevents a self-intersecting projected outline and the two pointed ears.
- const bow=Math.min(.38*Math.sin(Math.PI*p.fall),.82*Math.abs(theta-edge),theta,Math.PI*.5-theta);
+ const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz;return project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m)};
  for(let j=0;j<=rows;j++){
-  if(j){const u=(j-.5)/rows,a=theta-bow*Math.cos(Math.PI*u);yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
+  if(j){const u=(j-.5)/rows,t=p.fall;const a=Math.PI*.5*ease(clamp(t*1.7+u*.7-.7))+Math.sin(Math.PI*t)*Math.sin(Math.PI*u)*.68;yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
   L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz))
  }
- return {i,L,R,p,poly:L.concat(R.slice().reverse())}
+ const poly=L.concat(R.slice().reverse());
+ return {i,L,R,p,poly}
+}
+// A folded sheet can project onto itself. Build a union of its projected
+// strips, all with the same winding, rather than canceling the folded region.
+function sheetPath(s){
+ const {L,R,poly}=s;
+ if(L.length===2){shape(poly);return}
+ ctx.beginPath();
+ for(let j=1;j<L.length;j++){
+  let q=[L[j-1],L[j],R[j],R[j-1]],a=0;
+  for(let k=0;k<4;k++){const v=q[k],w=q[(k+1)%4];a+=v[0]*w[1]-w[0]*v[1]}
+  if(a<0)q.reverse();
+  ctx.moveTo(q[0][0],q[0][1]);for(let k=1;k<4;k++)ctx.lineTo(q[k][0],q[k][1]);ctx.closePath();
+ }
+}
+// Intro projection has horizontal cross-sections. Trace the exterior envelope
+// so the fold is a filled surface, with no internal strip outlines.
+function paperOutline(s){
+ const {L,R,p,poly}=s;
+ if(L.length===2||Math.abs(p.ry)+Math.abs(p.rz)>.001)return poly;
+ const ys=[...new Set(L.map(v=>v[1]))].sort((a,b)=>a-b),left=[],right=[];
+ for(const y of ys){
+  let lo=Infinity,hi=-Infinity;
+  for(let j=1;j<L.length;j++){
+   const a=L[j-1],b=L[j],c=R[j-1],d=R[j],dy=b[1]-a[1];
+   if(y<Math.min(a[1],b[1])-1e-7||y>Math.max(a[1],b[1])+1e-7)continue;
+   if(Math.abs(dy)<1e-8){lo=Math.min(lo,a[0],b[0]);hi=Math.max(hi,c[0],d[0]);continue}
+   const t=clamp((y-a[1])/dy);lo=Math.min(lo,mix(a[0],b[0],t));hi=Math.max(hi,mix(c[0],d[0],t));
+  }
+  if(Number.isFinite(lo)){left.push([lo,y]);right.push([hi,y])}
+ }
+ return left.concat(right.reverse());
 }
 function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
 function opticalRender(m){
@@ -69,13 +88,13 @@ function opticalRender(m){
  ctx.setTransform(dpr,0,0,dpr,0,m.topInset*dpr);
  silhouettes=poses.map((p,i)=>mesh(p,m,i)).sort((a,b)=>(a.p.z+(a.i===selected?500:0))-(b.p.z+(b.i===selected?500:0)));
  for(const s of silhouettes){const {p,L,R,poly}=s;if(p.opacity<.01)continue;
-  ctx.save();ctx.globalAlpha=p.opacity;shape(poly);
+  ctx.save();ctx.globalAlpha=p.opacity;sheetPath(s);
    const g=ctx.createLinearGradient(L[0][0],L[0][1],R[R.length-1][0],R[R.length-1][1]);
    g.addColorStop(0,'rgba(253,252,245,.52)');g.addColorStop(.28,'rgba(247,248,240,.38)');g.addColorStop(.72,'rgba(250,250,242,.42)');g.addColorStop(1,'rgba(238,243,234,.47)');
    ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-   ctx.save();shape(poly);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
-   ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(poly);ctx.stroke();
-   ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(102,117,104,.18)';ctx.lineWidth=.7;ctx.stroke();ctx.restore()
+   ctx.save();sheetPath(s);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
+   ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(paperOutline(s));ctx.stroke();
+   ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else {const outline=paperOutline(s),edge=outline.slice(outline.length/2).reverse();edge.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));}ctx.strokeStyle='rgba(102,117,104,.18)';ctx.lineWidth=.7;ctx.stroke();ctx.restore()
  }
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
@@ -83,7 +102,7 @@ function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.cli
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.19,260);return {W:r.width,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:s.height}}
-function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15,paperView:1}}
+function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
@@ -112,7 +131,7 @@ function currentDot(u,m){return flight(u,m)}
 // Common track geometry, continuous through the intro-to-gallery handoff.
 function archivePose(i,m,f=focus,amount=1){
  const d=i-f,t=clamp(.5+d*.84/(N-1)),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
- const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size,paperView:0};
+ const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
  return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48));
 }
 function panelTarget(m){
@@ -157,7 +176,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   if(phase==='animation'){
    if(i<N-1){
     const fall=ease((time-i*FALL_STAGGER)/FALL_DURATION);
-    p.fall=fall;
+    p.fall=fall;p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
    }
    if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.35),q=ease(t);const dest=archivePose(i,m,focus,1);p=between(p,dest,q);p.y-=Math.sin(Math.PI*t)*m.H*.24;p.z+=Math.sin(Math.PI*t)*45}
   }else if(archive){
