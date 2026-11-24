@@ -239,7 +239,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.querySelectorAll('span,b').forEach(el=>el.style.visibility=m.compact>.55&&Math.abs(i-Math.round(focus))>0?'hidden':'');const edge=Math.min(ax,m.W-ax);a.style.visibility=edge<(m.compact>.55?-7:20)||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.style.setProperty('--edge-fade',String(m.compact>.55?clamp((edge+7)/17):1));a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';const firstEndpoint=i===0&&phase==='explore'&&focus<-.5;a.querySelectorAll('span,b').forEach(el=>el.style.visibility=m.compact>.55&&Math.abs(i-Math.round(focus))>0&&!firstEndpoint?'hidden':'');a.classList.toggle('first-endpoint',firstEndpoint);const edge=Math.min(ax,m.W-ax);a.style.visibility=edge<(m.compact>.55?-7:20)||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.style.setProperty('--edge-fade',String(m.compact>.55?clamp((edge+7)/17):1));a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
