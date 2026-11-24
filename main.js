@@ -100,6 +100,12 @@ function panelTarget(m){
 }
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
 function renderPanel(m,u){
+ if(detail.classList.contains('raon-mode')){
+  detail.classList.toggle('morphing',u>.35);
+  detail.classList.toggle('content-ready',u>.53);
+  detail.classList.toggle('visible',phase==='detail');
+  return;
+ }
  if(!impactAnchor||u<PUSH){detail.classList.remove('morphing','visible','content-ready');return}
  const t=ease(clamp((u-PUSH)/(.94-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(PUSH,m);
  // Keep the launch point inside the growing surface: first open the mouth,
@@ -147,6 +153,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
       const t=clamp((u-HIT)/(1-HIT)),q=1-Math.pow(1-t,3);
       const dest={...p,x:m.W*(mobile()?.5:.27),y:m.viewportH*(mobile()?.48:.78)-m.topInset,z:120,ry:-13,rz:-7,scale:mobile()?1.10:1.26,opacity:1};
       p=between(contact,dest,q);
+       if(items[i].title==='라온이음')p.opacity*=1-ease(clamp((t-.12)/.58));
       p.y+=Math.sin(Math.PI*clamp(t/.24))*Math.min(24,m.H*.045)*(t<.24?1:0);
      }
     }else{const q=ease(clamp((u-.24)/.55));p.y-=q*m.viewportH*.035;p.opacity*=1-q*.83}
@@ -195,8 +202,57 @@ function navigate(delta,axis='y'){
  if(phase==='animation')unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,LAUNCH_START/LAUNCH_END);
 }
 function reset(){gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
-function open(i){if(phase!=='explore')return;target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());const p=items[i];$('category').textContent=p.category;$('projectTitle').textContent=p.title;$('projectDesc').textContent=p.description;const ph=$('placeholder');ph.replaceChildren();if(p.url){const a=document.createElement('a');a.href=p.url;a.textContent='View project';ph.append(a)}else ph.textContent='';openedAt=performance.now();setPhase('opening')}
-function close(){if(phase!=='detail'&&phase!=='opening')return;closeFrom=detailProgress(performance.now());detail.classList.remove('visible');detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')}
+
+const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
+let raonSlideIndex=0,raonTouchStart=null;
+function renderRaonSlide(){
+ const image=$('raonSlide');
+ image.src=RAON_SLIDES[raonSlideIndex];
+ image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
+ $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
+ $('raonPrev').disabled=raonSlideIndex===0;
+ $('raonNext').disabled=raonSlideIndex===RAON_SLIDES.length-1;
+}
+function moveRaonSlide(direction){
+ if(!detail.classList.contains('raon-mode')||!['detail','opening'].includes(phase))return;
+ const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);
+ if(next===raonSlideIndex)return;
+ raonSlideIndex=next;
+ const img=$('raonSlide');img.classList.remove('page-enter');void img.offsetWidth;img.classList.add('page-enter');
+ renderRaonSlide();
+}
+$('raonPrev').addEventListener('click',()=>moveRaonSlide(-1));
+$('raonNext').addEventListener('click',()=>moveRaonSlide(1));
+$('raonReader').addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='touch'||e.target.closest('button'))return;
+ raonTouchStart={x:e.clientX,y:e.clientY};
+});
+$('raonReader').addEventListener('pointerup',e=>{
+ if(!raonTouchStart)return;
+ const dx=e.clientX-raonTouchStart.x,dy=e.clientY-raonTouchStart.y;
+ raonTouchStart=null;
+ if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.3)moveRaonSlide(dx<0?1:-1);
+});
+function open(i){
+ if(phase!=='explore')return;
+ target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
+ impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());
+ const p=items[i],isRaon=p.title==='라온이음';
+ detail.classList.toggle('raon-mode',isRaon);
+ $('raonReader').hidden=!isRaon;
+ $('category').textContent=p.category;
+ $('projectTitle').textContent=p.title;
+ $('projectDesc').textContent=p.description;
+ const ph=$('placeholder');ph.replaceChildren();
+ if(isRaon){raonSlideIndex=0;renderRaonSlide();}
+ else if(p.url){const link=document.createElement('a');link.href=p.url;link.textContent='View project';ph.append(link);}
+ openedAt=performance.now();setPhase('opening');
+}
+function close(){
+ if(phase!=='detail'&&phase!=='opening')return;
+ closeFrom=detailProgress(performance.now());detail.classList.remove('visible');
+ detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')
+}
 $('close').onclick=close;$('fold').onclick=()=>{if(phase==='explore'){enterTransition();unfoldTarget=0;gate=false;returning=true;}};
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
@@ -230,5 +286,5 @@ function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+3
 scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
 scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
