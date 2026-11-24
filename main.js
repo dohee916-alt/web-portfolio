@@ -180,7 +180,7 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35;
-function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
+function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+dt/3);unfoldTarget=1}
@@ -339,17 +339,17 @@ scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
  const now=performance.now(),gap=now-lastWheel;lastWheel=now;
  if(returning||launchLocked)return;
- if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
+ if(phase==='explore'&&gate){if(gap<120)return;gate=false;}
  const gallery=phase==='explore';
  let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):e.deltaY;
  if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
- const units=clamp(delta/105,-1.5,1.5);
+ const units=clamp(delta/(gallery?clamp(measure().trackStep*.65,24,105):105),-1.5,1.5);
  if(gallery){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
  navigate(units,gallery?'x':'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
  if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
- drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
+ drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
  if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
@@ -357,10 +357,10 @@ window.addEventListener('pointermove',e=>{
  if(!drag.axis||launchLocked||returning)return;
  const now=performance.now(),m=measure();
  if(drag.axis==='y'&&phase==='animation'&&touchHold){unfoldTarget=clamp(unfoldTarget-(e.clientY-drag.lastY)/Math.max(160,m.viewportH*.65),0,1)}else if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
- if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
+ if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/Math.max(24,m.trackStep);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
-function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),-1,N-1)}velocity=0}drag=null;if(touchHold){touchHold=false;if(phase==='animation'&&!returning)resumeIntro()}scene.classList.remove('dragging')}
+function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;const dx=lastDragX-drag.x;let snap=Math.round(target+clamp(velocity*.12,-1,1));if(Math.abs(dx)>=12&&snap===Math.round(drag.startTarget))snap=Math.round(drag.startTarget)-Math.sign(dx);target=clamp(snap,-1,N-1)}velocity=0}drag=null;if(touchHold){touchHold=false;if(phase==='animation'&&!returning)resumeIntro()}scene.classList.remove('dragging')}
 // Only actual pointer movement can interrupt automatic playback.
 let mousePoint=null;
 scene.addEventListener('pointermove',e=>{
