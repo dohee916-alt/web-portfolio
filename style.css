@@ -269,3 +269,7 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 #detail.portfolio-mode .raon-reader-media #raonSlide,#detail.portfolio-mode .raon-reader-media .page-turn-copy{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;}
 #detail.portfolio-mode .raon-reader-media .page-turn-copy{z-index:2;pointer-events:none;backface-visibility:hidden;will-change:transform,opacity;filter:drop-shadow(4px 1px 4px #23352622);}
 #detail.portfolio-mode .raon-reader-nav{top:calc(100% + var(--paper-pad,12px));}
+
+/* Allow the flexible page to extend beyond its resting paper bounds. */
+#detail.portfolio-mode .raon-reader-media{overflow:visible}
+#detail.portfolio-mode .page-turn-mesh{position:absolute;z-index:3;pointer-events:none;max-width:none;max-height:none;display:block}
