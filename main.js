@@ -25,6 +25,16 @@ items.forEach((p,i)=>{
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
 const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
+// A fixed, very fine fiber pattern reads as paper without shimmering in motion.
+const grainTile=document.createElement('canvas');grainTile.width=grainTile.height=96;
+const grainCtx=grainTile.getContext('2d');let grainSeed=17;
+const grainRandom=()=>((grainSeed=(grainSeed*1664525+1013904223)>>>0)/4294967296);
+for(let i=0;i<320;i++){
+ const x=grainRandom()*96,y=grainRandom()*96;
+ grainCtx.fillStyle=i%3?'rgba(81,91,75,.13)':'rgba(255,255,247,.28)';
+ grainCtx.fillRect(x,y,grainRandom()*1.1+.2,grainRandom()*1.1+.2);
+}
+const paperGrain=ctx.createPattern(grainTile,'repeat');
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
  const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
@@ -36,7 +46,7 @@ function mesh(p,m,i){
  }
  return {i,L,R,p,poly:L.concat(R.slice().reverse())}
 }
-function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(10,Math.hypot(q[0]-p[0],q[1]-p[1])*.12),b=Math.min(10,Math.hypot(r[0]-q[0],r[1]-q[1])*.12),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
+function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
 function opticalRender(m){
  // Render on the entire scene, not just the lower world layout box.
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.round(m.W*dpr),h=Math.round(m.viewportH*dpr);
@@ -47,21 +57,24 @@ function opticalRender(m){
  silhouettes=poses.map((p,i)=>mesh(p,m,i)).sort((a,b)=>(a.p.z+(a.i===selected?500:0))-(b.p.z+(b.i===selected?500:0)));
  for(const s of silhouettes){const {p,L,R,poly}=s;if(p.opacity<.01)continue;
   ctx.save();ctx.globalAlpha=p.opacity;shape(poly);
-  const g=ctx.createLinearGradient(L[0][0]-30,L[0][1],R[R.length-1][0]+30,R[R.length-1][1]);
-  g.addColorStop(0,'rgba(239,252,255,.60)');g.addColorStop(.19,'rgba(195,226,243,.20)');g.addColorStop(.48,'rgba(88,145,191,.17)');g.addColorStop(.78,'rgba(225,247,255,.49)');g.addColorStop(1,'rgba(99,158,201,.35)');
-  ctx.fillStyle=g;ctx.shadowColor='rgba(45,87,125,.11)';ctx.shadowBlur=16;ctx.shadowOffsetY=8;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-  ctx.strokeStyle='rgba(250,255,255,.88)';ctx.lineWidth=1;ctx.stroke();
-  ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(76,117,155,.42)';ctx.lineWidth=1.6;ctx.stroke();
-  // A broad, continuous highlight follows the curved sheet, without segment seams.
-  ctx.save();shape(poly);ctx.clip();const a=L[Math.floor((L.length-1)*.6)],b=R[Math.floor((R.length-1)*.6)];
-  const shimmer=ctx.createLinearGradient(a[0]-18,a[1]-35,b[0]+18,b[1]+35);shimmer.addColorStop(0,'#ffffff00');shimmer.addColorStop(.52,'#ffffff31');shimmer.addColorStop(1,'#ffffff00');ctx.fillStyle=shimmer;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();ctx.restore()
+   const g=ctx.createLinearGradient(L[0][0],L[0][1],R[R.length-1][0],R[R.length-1][1]);
+   g.addColorStop(0,'rgba(253,252,245,.52)');g.addColorStop(.28,'rgba(247,248,240,.38)');g.addColorStop(.72,'rgba(250,250,242,.42)');g.addColorStop(1,'rgba(238,243,234,.47)');
+   ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+   ctx.save();shape(poly);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
+   const bandRow=Math.max(0,Math.round((L.length-1)*.915));
+   const bandL=L.length===2?[mix(L[0][0],L[1][0],.915),mix(L[0][1],L[1][1],.915)]:L[bandRow];
+   const bandR=R.length===2?[mix(R[0][0],R[1][0],.915),mix(R[0][1],R[1][1],.915)]:R[bandRow];
+   ctx.beginPath();ctx.moveTo(...L[L.length-1]);ctx.lineTo(...R[R.length-1]);ctx.lineTo(...bandR);ctx.lineTo(...bandL);ctx.closePath();ctx.fillStyle='rgba(255,255,248,.09)';ctx.fill();
+   ctx.beginPath();ctx.moveTo(...bandL);ctx.lineTo(...bandR);ctx.strokeStyle='rgba(119,128,112,.09)';ctx.lineWidth=.6;ctx.stroke();
+   ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(poly);ctx.stroke();
+   ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(102,117,104,.18)';ctx.lineWidth=.7;ctx.stroke();ctx.restore()
  }
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
-function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.21,290);return {W:r.width,H:r.height,w,h:w*1.32,topInset:r.top-s.top,viewportH:s.height}}
+function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.19,260);return {W:r.width,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:s.height}}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
@@ -290,3 +303,4 @@ scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hov
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
+
