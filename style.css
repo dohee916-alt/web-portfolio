@@ -261,3 +261,11 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 #detail.portfolio-mode .raon-reader-nav button:disabled{opacity:.3}
 #detail.portfolio-mode #close{position:absolute;top:-42px;right:0;margin:0;padding:0;width:36px;height:36px;display:grid;place-items:center;background:none;border:0;color:#f4eedc;font-size:25px;z-index:10}
 #detail.portfolio-mode.content-ready #close{opacity:var(--reveal,0);transform:none}
+
+/* Equal paper margins and restrained, two-layer page transition. */
+#detail.portfolio-mode #raonReader{inset:var(--paper-pad,12px);transform:none;}
+#detail.portfolio-mode.content-ready.slide-loaded #raonReader{opacity:var(--reveal,0);transform:translateY(calc((1 - var(--reveal,0))*5px)) scale(calc(.995 + .005 * var(--reveal,0)));}
+#detail.portfolio-mode .raon-reader-media{position:relative;isolation:isolate;overflow:hidden;touch-action:pan-y;}
+#detail.portfolio-mode .raon-reader-media #raonSlide,#detail.portfolio-mode .raon-reader-media .page-turn-copy{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;}
+#detail.portfolio-mode .raon-reader-media .page-turn-copy{z-index:2;pointer-events:none;backface-visibility:hidden;will-change:transform,opacity;filter:drop-shadow(4px 1px 4px #23352622);}
+#detail.portfolio-mode .raon-reader-nav{top:calc(100% + var(--paper-pad,12px));}
