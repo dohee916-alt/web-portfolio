@@ -4,6 +4,8 @@ const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
+const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text');
+futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','middle');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureText.textContent='More to Unfold';svg.append(futurePath,futureText);
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
 function setPhase(p){phase=p;scene.dataset.phase=p;$('foldEdge').hidden=true;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
@@ -245,6 +247,13 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  // Exact quadratic between the same track coordinates used by the anchors.
  const midX=(a0.x+a1.x)/2,midY=2*trackY(midX,m)-(a0.y+a1.y)/2;
  path.setAttribute('d','M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
+ const futureFade=phase==='explore'?clamp((focus-(N-1.65))/.65):0;
+ const endX=m.W-Math.min(12,m.W*.035),startX=a1.x,midFuture=(startX+endX)/2;
+ const endY=trackY(endX,m),controlY=2*trackY(midFuture,m)-(a1.y+endY)/2;
+ const futureVisible=futureFade>0&&endX>startX+24;
+ futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
+ futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
+ const futureX=m.W*.77;futureText.setAttribute('x',String(futureX));futureText.setAttribute('y',String(trackY(futureX,m)-14));futureText.setAttribute('font-size',String(m.compact>.55?11:14));futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
  const tangent=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2)*180/Math.PI;
