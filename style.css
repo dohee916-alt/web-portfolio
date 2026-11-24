@@ -222,3 +222,6 @@ header>span,header #fold,header #foldEdge,#scene #nav,#scene #nav button,#layers
 header #fold svg,header #fold:hover svg,header #foldEdge svg{stroke:var(--gallery-ivory)}
 header #fold.mobile-fold,header #fold.mobile-fold:hover,header #fold.mobile-fold:active{color:var(--gallery-ivory)}
 header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:focus-visible{outline:2px solid var(--gallery-ivory);outline-offset:3px}
+
+/* Remove redundant previous/next controls; keep swipe/wheel navigation and return controls. */
+#scene #nav{display:none!important}
