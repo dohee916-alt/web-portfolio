@@ -383,3 +383,11 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #contactBloom #contactSeed:focus,#contactBloom #contactSeed:focus-visible{outline:none;box-shadow:none}
 #contactBloom #contactSeed:focus-visible #seedStage{filter:drop-shadow(0 0 3px #f4eedc88)}
 #contactBloom #contactSeed::selection,#contactBloom #seedStage::selection{background:transparent}
+
+/* A soft, warm invitation, confined to the seed before watering. */
+#seedStage[data-growth=seed] .seed-shell{filter:drop-shadow(0 0 3px #e8dfbbaa) drop-shadow(0 0 7px #e5d8a455)}
+#seedStage .seed-halo{opacity:0;transition:opacity .6s ease;pointer-events:none}
+#seedStage[data-growth=seed] .seed-halo{opacity:.7;animation:seed-breathe 3.4s ease-in-out infinite}
+#contactSeed:hover #seedStage[data-growth=seed] .seed-halo{opacity:1}
+@keyframes seed-breathe{0%,100%{opacity:.48}50%{opacity:.85}}
+@media(prefers-reduced-motion:reduce){#seedStage[data-growth=seed] .seed-halo{animation:none}}
