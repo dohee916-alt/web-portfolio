@@ -37,7 +37,9 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  dialog.addEventListener('close',()=>{flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
-  el.addEventListener('pointerdown',e=>e.stopPropagation());
+  el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
+  el.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation()});
+  el.addEventListener('dragstart',e=>e.preventDefault());
   el.addEventListener('click',e=>e.stopPropagation());
  }
  seedButton.addEventListener('click',()=>{
