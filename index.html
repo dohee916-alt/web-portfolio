@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=engraved-contact-leaf"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=leaf-inner-bevel"></head>
 <body><header><span>FOLI:ON</span><button id="fold" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="foldEdge" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="contactOpen" type="button">Contact</button></header>
 <main id="scene" data-phase="intro" aria-label="Interactive portfolio"><div class="heading" hidden aria-hidden="true"><p id="eyebrow">01 / LAYERS</p><h1 id="headline">Layers of experience.</h1><p id="hint">스크롤하여 레이어를 펼치세요.</p></div>
 <p id="stillGrowing">Still growing...</p>
@@ -30,7 +30,20 @@
 <button id="contactClose" type="button" aria-label="Close contact">×</button>
 <div id="contactLeafSurface">
 <svg viewBox="0 0 540 300" aria-hidden="true">
- <defs><linearGradient id="contactLeafColor" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#a9bd90"/><stop offset=".53" stop-color="#c9d3a9"/><stop offset="1" stop-color="#d8dfbd"/></linearGradient></defs>
+ <defs>
+ <filter id="leafEngrave" x="-15%" y="-30%" width="130%" height="160%" color-interpolation-filters="sRGB">
+  <feGaussianBlur in="SourceAlpha" stdDeviation=".45" result="soft"/>
+  <feOffset in="soft" dx="0" dy=".85" result="lower"/>
+  <feComposite in="lower" in2="SourceAlpha" operator="out" result="lowerEdge"/>
+  <feFlood flood-color="#f3f6d9" flood-opacity=".76" result="light"/>
+  <feComposite in="light" in2="lowerEdge" operator="in" result="bevelLight"/>
+  <feOffset in="soft" dx="0" dy="1.1" result="innerOffset"/>
+  <feComposite in="SourceAlpha" in2="innerOffset" operator="out" result="innerEdge"/>
+  <feFlood flood-color="#2d482c" flood-opacity=".80" result="dark"/>
+  <feComposite in="dark" in2="innerEdge" operator="in" result="bevelDark"/>
+  <feMerge><feMergeNode in="bevelLight"/><feMergeNode in="SourceGraphic"/><feMergeNode in="bevelDark"/></feMerge>
+ </filter>
+ <linearGradient id="contactLeafColor" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#a9bd90"/><stop offset=".53" stop-color="#c9d3a9"/><stop offset="1" stop-color="#d8dfbd"/></linearGradient></defs>
  <path id="leafOutline" d="M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z" fill="url(#contactLeafColor)"/>
  <path d="M8 246 Q253 145 532 52" fill="none" stroke="#f4eedc" stroke-width="1.5" opacity=".35"/>
 </svg>
