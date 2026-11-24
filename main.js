@@ -190,7 +190,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+playDt/3);unfoldTarget=1}
   else if(held()){const diff=unfoldTarget-unfold;const maxStep=dt*(touchHold?.10:.20);unfold+=clamp(diff,-maxStep,maxStep);if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
-  else if(autoUnfold){const speed=1/3;unfold=Math.min(1,unfold+playDt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
+  else if(autoUnfold){const speed=1/6.8;unfold=Math.min(1,unfold+playDt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
   if(!returning&&!launchLocked&&unfold>=DOWN_END/LAUNCH_END-.0001){launchLocked=true;clearIntroControl();unfoldTarget=1;drag=null;scene.classList.remove('dragging')}
  }
  if(phase==='animation'&&returning&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
