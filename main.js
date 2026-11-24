@@ -274,6 +274,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  const futureVisible=futureFade>0&&endX>startX+24;
  futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
+ const seedEntry=$('contactSeed');if(seedEntry){seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=endX+'px';seedEntry.style.top=(endY+m.topInset+12)+'px';seedEntry.style.opacity=String(futureFade);}
  const futureX=endX;futureText.setAttribute('x',String(futureX));futureText.setAttribute('y',String(trackY(futureX,m)-14));futureText.setAttribute('font-size',String(m.compact>.55?11:14));futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
@@ -605,7 +606,7 @@ window.addEventListener('touchend',finishIntroTouch,{passive:false});
 window.addEventListener('touchcancel',finishIntroTouch,{passive:false});
 window.addEventListener('blur',()=>{if(!introTouch&&!touchHold)return;introTouch=null;drag=null;touchHold=false;hoverHold=false;if(phase==='animation'&&!returning&&!launchLocked){autoUnfold=true;resumeIntro()}});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
+window.addEventListener('keydown',e=>{if($('contactDialog')?.open)return;if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 // Persist only the current tab's reading position, not the rendered geometry.
 const VIEW_KEY='folio-view-v1';
 const itemKey=p=>p?String(p.id||p.year+'|'+p.title):null;
