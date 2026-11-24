@@ -1,5 +1,5 @@
 // 공개할 이메일과 링크만 여기에 입력하세요.
-const CONTACT = { email: "", links: [] };
+const CONTACT = { email: "dohee916@gmail.com", links: [] };
 
 (()=>{
  const dialog=document.getElementById('contactDialog'),openButton=document.getElementById('contactOpen'),seedButton=document.getElementById('contactSeed'),inline=document.getElementById('contactBloom'),stage=document.getElementById('seedStage'),info=document.getElementById('contactInfo'),bloomInfo=document.getElementById('bloomInfo');
@@ -12,9 +12,9 @@ const CONTACT = { email: "", links: [] };
    if(!link.label||!/^https:\/\//i.test(link.url))continue;
    const a=document.createElement('a');a.href=link.url;a.textContent=link.label;a.target='_blank';a.rel='noopener noreferrer';container.append(a);
   }
-  if(!container.children.length&&container===info){const p=document.createElement('p');p.className='contact-preview';p.textContent='Contact details coming soon.';container.append(p)}
+  
  }
- fill(info);fill(document.getElementById('bloomLinks'));
+ fill(document.getElementById('bloomLinks'));
  openButton.addEventListener('click',()=>{if(!dialog.open)dialog.showModal()});
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
