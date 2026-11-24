@@ -273,3 +273,11 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 /* Allow the flexible page to extend beyond its resting paper bounds. */
 #detail.portfolio-mode .raon-reader-media{overflow:visible}
 #detail.portfolio-mode .page-turn-mesh{position:absolute;z-index:3;pointer-events:none;max-width:none;max-height:none;display:block}
+
+/* Artwork and its paper support are a single morphing surface, not two reveals. */
+#detail.portfolio-mode #raonReader{inset:auto;left:0;top:0;width:var(--page-width);height:var(--page-height);box-sizing:border-box;padding:var(--paper-pad,12px)!important;transform-origin:0 0;transform:scale(var(--page-scale-x,1),var(--page-scale-y,1));opacity:0;transition:none!important}
+#detail.portfolio-mode.morphing.slide-loaded #raonReader,#detail.portfolio-mode.content-ready.slide-loaded #raonReader{opacity:1;transform:scale(var(--page-scale-x,1),var(--page-scale-y,1));pointer-events:none}
+#detail.portfolio-mode.morphing:not(.visible) #raonReader{clip-path:inset(0 round var(--page-clip-radius,2px))}
+#detail.portfolio-mode.visible.slide-loaded #raonReader{pointer-events:auto}
+#detail.portfolio-mode #raonReader .raon-reader-nav{top:100%;opacity:var(--reveal,0);pointer-events:none}
+#detail.portfolio-mode.visible #raonReader .raon-reader-nav{pointer-events:auto}
