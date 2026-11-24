@@ -182,9 +182,12 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
 function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt){
  const idle=now-wheelAt;
- if(idle>190){
-  if(Math.abs(scrollSpeed)>.08){const decay=Math.exp(-dt*9);target=clamp(target+scrollSpeed*(1-decay)/9,-1,N-1);scrollSpeed*=decay;if((target===-1&&scrollSpeed<0)||(target===N-1&&scrollSpeed>0))scrollSpeed=0}
-  if(Math.abs(scrollSpeed)<=.08&&Math.abs(target-focus)<.035){target=clamp(Math.round(target),-1,N-1);wheelAt=0;scrollSpeed=0;wheelDirection=0}
+ if(idle>150){
+  // Choose the final snap once, before the remaining visual travel. Never coast then correct backwards.
+  const predicted=clamp(target+scrollSpeed/9,-1,N-1);
+  const nearest=Math.round(predicted);
+  const destination=wheelDirection>0?Math.max(nearest,Math.ceil(focus-.001)):Math.min(nearest,Math.floor(focus+.001));
+  target=clamp(destination,-1,N-1);wheelAt=0;scrollSpeed=0;wheelDirection=0;
  }
 }focus=mix(focus,target,1-Math.exp(-dt*(drag?35:wheelAt?26:10)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
@@ -480,8 +483,8 @@ scene.addEventListener('wheel',e=>{
   if(!delta)return;
   const direction=Math.sign(delta);
   const fresh=!wheelAt||gap>190;
-  if(fresh){scrollSpeed=0;velocity=0;target=focus+(target-focus)*.35}
-  if(wheelDirection&&direction!==wheelDirection){target=focus+(target-focus)*.15;scrollSpeed=0}
+  if(fresh){scrollSpeed=0;velocity=0;target=focus}
+  if(wheelDirection&&direction!==wheelDirection){target=focus;scrollSpeed=0}
   wheelDirection=direction;
   // Unrestricted continuous travel; low-amplitude events remain precise.
   const magnitude=Math.abs(delta),gain=mix(.85,1.15,ease(clamp((magnitude-10)/100)));
