@@ -39,9 +39,22 @@ function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(
 function mesh(p,m,i){
  const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
  let yy=0,zz=0;
- const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz;return project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m)};
+ // Intro sheets rotate around their bottom edge. Use a stable oblique paper
+ // view during the flip; blend back into the existing gallery perspective.
+ const view=p.paperView||0, hinge=project(p.x,p.y,p.z,m);
+ const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-p.z);
+ const convert=(x,y,z)=>{
+  x*=p.scale;y*=p.scale;z*=p.scale;
+  const a=x*cz-y*sz,b=x*sz+y*cz,dx=a*cy+z*sy,dz=-a*sy+z*cy;
+  const v=project(p.x+dx,p.y+b,p.z+dz,m);
+  return [mix(v[0],hinge[0]+dx*k,view),mix(v[1],hinge[1]+(b+.42*dz)*k,view),v[2]];
+ };
+ const theta=Math.PI*.5*p.fall,edge=Math.atan2(1,.42);
+ // Keep every cross-section on the same side of the edge-on angle. This
+ // prevents a self-intersecting projected outline and the two pointed ears.
+ const bow=Math.min(.38*Math.sin(Math.PI*p.fall),.82*Math.abs(theta-edge),theta,Math.PI*.5-theta);
  for(let j=0;j<=rows;j++){
-  if(j){const u=(j-.5)/rows,t=p.fall;const a=Math.PI*.5*ease(clamp(t*1.7+u*.7-.7))+Math.sin(Math.PI*t)*Math.sin(Math.PI*u)*.68;yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
+  if(j){const u=(j-.5)/rows,a=theta-bow*Math.cos(Math.PI*u);yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
   L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz))
  }
  return {i,L,R,p,poly:L.concat(R.slice().reverse())}
@@ -70,7 +83,7 @@ function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.cli
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.19,260);return {W:r.width,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:s.height}}
-function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
+function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15,paperView:1}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
@@ -99,7 +112,7 @@ function currentDot(u,m){return flight(u,m)}
 // Common track geometry, continuous through the intro-to-gallery handoff.
 function archivePose(i,m,f=focus,amount=1){
  const d=i-f,t=clamp(.5+d*.84/(N-1)),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
- const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
+ const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size,paperView:0};
  return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48));
 }
 function panelTarget(m){
@@ -144,7 +157,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   if(phase==='animation'){
    if(i<N-1){
     const fall=ease((time-i*FALL_STAGGER)/FALL_DURATION);
-    p.fall=fall;p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
+    p.fall=fall;
    }
    if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.35),q=ease(t);const dest=archivePose(i,m,focus,1);p=between(p,dest,q);p.y-=Math.sin(Math.PI*t)*m.H*.24;p.z+=Math.sin(Math.PI*t)*45}
   }else if(archive){
