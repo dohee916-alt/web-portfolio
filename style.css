@@ -225,3 +225,6 @@ header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:foc
 
 /* Remove redundant previous/next controls; keep swipe/wheel navigation and return controls. */
 #scene #nav{display:none!important}
+
+/* Fade only the visible portions of anchors at the viewport boundary. */
+#scene[data-phase=explore] .anchor:not(.active){opacity:calc(.88 * var(--edge-fade,1))}
