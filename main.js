@@ -275,7 +275,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
  const seedEntry=$('contactBloom');if(seedEntry){seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=(endX-12)+'px';seedEntry.style.top=(endY+m.topInset+38)+'px';seedEntry.style.opacity=String(futureFade);}
- const futureX=endX;futureText.setAttribute('x',String(futureX));futureText.setAttribute('y',String(trackY(futureX,m)-14));futureText.setAttribute('font-size',String(m.compact>.55?11:14));futureText.setAttribute('letter-spacing','.35');
+ const futureX=endX;futureText.setAttribute('x',String(futureX));futureText.setAttribute('y',String(trackY(futureX,m)-14));futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
  const tangent=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2)*180/Math.PI;
