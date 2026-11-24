@@ -110,10 +110,10 @@ scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blo
 function measure(){
  const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
  // Fixed intro paper size; shrink only to fit a small viewport.
- const w=Math.min(185,W*.43,V*.48/(9.5/7*1.15));
+ const w=Math.min(185,W*.43); // Never resize the intro stack based on viewport aspect ratio or height.
  // Layout is determined by the available viewport, not the input device.
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
- const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
+ const galleryW=Math.min(260,W*.43,Math.max(185,W*.19)); // Monotonic width; compact layout changes spacing, not paper size.
  return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
   trackW:Math.min(W,V*1.6),trackStep:mix(Math.min(W*.84/Math.max(1,Math.min(N-1,7)),galleryW*.70),galleryW*.55,compact)};
 }
