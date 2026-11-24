@@ -188,3 +188,9 @@ header #fold svg{width:19px;height:19px;transform:rotate(var(--back-angle,0deg))
 /* Background sampled from the editable Figma intro artwork. */
 #scene::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:#00532d url("./assets/intro-green.svg") center / cover no-repeat;filter:saturate(1.65) hue-rotate(7deg);opacity:1}
 
+
+/* Mobile-only persistent fold control, clear of the gallery and safe area. */
+header #fold.mobile-fold{position:fixed;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);left:50%;transform:translateX(-50%);width:48px;height:48px;border:1px solid rgba(222,236,225,.42);border-radius:50%;background:rgba(255,255,255,.06);touch-action:none;color:#e0ebdf}
+header #fold.mobile-fold svg{width:21px;height:21px;stroke:#e0ebdf;transform:rotate(-90deg)}
+header #fold.mobile-fold:active{background:rgba(255,255,255,.16)}
+@media(pointer:coarse){#nav:not([hidden]){bottom:calc(env(safe-area-inset-bottom,0px) + 82px)}}
