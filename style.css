@@ -190,10 +190,14 @@ header #fold svg{width:19px;height:19px;transform:rotate(var(--back-angle,0deg))
 
 
 /* Mobile grabber: visual bar only, with a generous invisible hit area. */
-header #fold.mobile-fold{position:fixed;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + clamp(94px,15dvh,150px));left:50%;transform:translate(-50%,var(--fold-pull,0px));width:136px;height:48px;padding:0;border:0;border-radius:0;background:none;touch-action:none;color:#c3d6cb;transition:transform .2s ease}
+header #fold.mobile-fold{position:fixed;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:50%;transform:translate(-50%,var(--fold-pull,0px));width:136px;height:48px;padding:0;border:0;border-radius:0;background:none;touch-action:none;color:#c3d6cb;transition:transform .2s ease}
 header #fold.mobile-fold svg{display:none}
 header #fold.mobile-fold::after{content:"";width:76px;height:6px;border-radius:999px;background:currentColor;transition:width .18s ease,opacity .18s ease;pointer-events:none}
 header #fold.mobile-fold.fold-grabbed{transition:none}
 header #fold.mobile-fold.fold-grabbed::after{width:86px;opacity:1}
 header #fold.mobile-fold:active,header #fold.mobile-fold:hover{background:none;color:#dbe8df}
 @media(pointer:coarse){#nav:not([hidden]){bottom:calc(env(safe-area-inset-bottom,0px) + 26px)}}
+
+/* Hide project count on all viewport sizes; leave navigation arrows available. */
+#counter{display:none!important}
+@media(pointer:coarse){#nav:not([hidden]){bottom:calc(env(safe-area-inset-bottom,0px) + 64px)}}
