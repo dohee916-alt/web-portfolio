@@ -18,10 +18,10 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   if(source&&source.width>0&&source.height>0&&dest.width>0){
    const sx=source.left+source.width/2,sy=source.top+source.height/2,dx=dest.left+dest.width/2,dy=dest.top+dest.height/2;
    const x=sx-dx,y=sy-dy,scale=Math.max(.012,source.width/dest.width);
-   // The same right-hand leaf silhouette takes off from its measured position.
+   // The left-hand leaf silhouette takes off from its measured position.
    frames=[
-    {transform:'translate('+x+'px,'+y+'px) rotate(-43deg) scale('+scale+')',offset:0},
-    {transform:'translate('+(x*.91)+'px,'+(y-26)+'px) rotate(-65deg) scale('+(scale*1.3)+')',offset:.17},
+    {transform:'translate('+x+'px,'+y+'px) rotate(43deg) scale('+scale+')',offset:0},
+    {transform:'translate('+(x*.91)+'px,'+(y-26)+'px) rotate(65deg) scale('+(scale*1.3)+')',offset:.17},
     {transform:'translate('+(x*.56-12)+'px,'+(y*.62+32)+'px) rotate(14deg) scale(.33)',offset:.51},
     {transform:'translate('+(x*.12)+'px,'+(y*.1-9)+'px) rotate(-5deg) scale(.88)',offset:.83},
     {...final,offset:1}
