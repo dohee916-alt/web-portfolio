@@ -414,6 +414,14 @@ scene.addEventListener('wheel',e=>{
   const magnitude=Math.abs(delta),gain=mix(.68,1.12,ease(clamp((magnitude-12)/100)));
   const units=direction*Math.min(1,magnitude/100*gain);
   wheelAt=now;target=clamp(focus+clamp(target-focus+units,-1.15,1.15),-1,N-1);
+ }else if(phase==='animation'){
+  // Wheel scrubbing shares the same paused playhead as mouse-hover scrubbing.
+  if(!delta||touchHold)return;
+  if(pick(e)<0){if(hoverHold){hoverHold=false;resumeIntro()}return}
+  if(!hoverHold){hoverHold=true;pauseIntro()}
+  const range=Math.max(700,measure().viewportH*1.8);
+  const step=clamp(delta/range,-.025,.025);
+  unfoldTarget=clamp(unfoldTarget+step,Math.max(0,unfold-.04),Math.min(DOWN_END/LAUNCH_END,unfold+.04));
  }else navigate(clamp(delta/105,-1.5,1.5),'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
