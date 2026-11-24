@@ -167,7 +167,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(held()){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*24));if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
-  else if(autoUnfold){const speed=(unfold*LAUNCH_END<LAUNCH_START?.52:.78)+releaseBoost;unfold=Math.min(1,unfold+dt*speed/LAUNCH_END);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
+  else if(autoUnfold){const speed=1/3+releaseBoost;unfold=Math.min(1,unfold+dt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
  }
  if(phase==='animation'&&returning&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
  if(phase==='animation'&&unfold===1&&unfoldTarget===1&&!held()){clearIntroControl();autoUnfold=false;launchLocked=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
@@ -218,7 +218,6 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
 
  }
  opticalRender(m);
- updatePaperHover();
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=phase==='explore'&&focus<-.965?anchorAt(-1,m,focus+1.65):anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.62*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
  const back=$('fold'),ba=anchorAt(-1,m,focus+1.65),br=root.getBoundingClientRect();back.hidden=phase!=='explore'||focus>-.965||target>-.965;back.style.left=(br.left+ba.x)+'px';back.style.top=(br.top+ba.y+5)+'px';const tangent=Math.atan2(midY-a0.y,midX-a0.x)*180/Math.PI;back.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
@@ -234,7 +233,7 @@ function enterTransition(){
  if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
  scene.classList.remove('intro-card-hover');
 }
-function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus;autoUnfold=true;unfoldTarget=1;$('hint').textContent=mobile()?'누르고 드래그하여 조절 · 놓으면 계속 재생':'종이에 마우스를 올려 조절 · 벗어나면 계속 재생'}
+function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus;autoUnfold=true;unfoldTarget=1;$('hint').textContent=mobile()?'누르고 드래그하여 조절 · 놓으면 계속 재생':'종이 위에서 마우스를 움직여 조절 · 벗어나면 계속 재생'}
 function navigate(delta,axis='y'){
  if(returning||launchLocked)return;
  if(!delta||!['intro','animation','explore'].includes(phase))return;
@@ -243,8 +242,8 @@ function navigate(delta,axis='y'){
   return;
  }
  if(phase==='explore'){if(delta>=0)return;enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;returning=true;return}
- if(phase==='intro'){if(delta<=0)return;start();if(drag){touchHold=true;pauseIntro()}else return}
- if(phase==='animation'&&held())unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,1);
+ if(phase==='intro'){if(delta<=0)return;start();return}
+ if(phase==='animation'&&touchHold)unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,1);
 }
 function reset(){clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
@@ -307,7 +306,7 @@ let wheelAxis=null,returning=false,launchLocked=false;
 let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
 function held(){return hoverHold||touchHold}
 function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
-function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=.75}}
+function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=.25}}
 function clearIntroControl(){hoverArmed=false;hoverHold=false;touchHold=false;releaseBoost=0;}
 scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
@@ -323,33 +322,33 @@ scene.addEventListener('wheel',e=>{
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
  if(returning||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
- drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};if(phase==='animation'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
+ drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
  if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
  if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true;scene.classList.add('dragging')}
  if(!drag.axis||launchLocked||returning)return;
  const now=performance.now(),m=measure();
- if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
+ if(drag.axis==='y'&&phase==='animation'&&touchHold){unfoldTarget=clamp(unfoldTarget-(e.clientY-drag.lastY)/Math.max(160,m.viewportH*.65),0,1)}else if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
  if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
 function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),-1,N-1)}velocity=0}drag=null;if(touchHold){touchHold=false;if(phase==='animation'&&!returning)resumeIntro()}scene.classList.remove('dragging')}
-// Hover is armed only after leaving the paper once after the initial click.
+// Only actual pointer movement can interrupt automatic playback.
 let mousePoint=null;
-function updatePaperHover(){
- if(phase!=='animation'||returning||!mousePoint)return;
- const hit=pick(mousePoint)>=0;
- if(!hit){hoverArmed=true;if(hoverHold){hoverHold=false;resumeIntro()}}
- else if(hoverArmed&&!hoverHold){hoverHold=true;pauseIntro()}
-}
 scene.addEventListener('pointermove',e=>{
  if(e.pointerType!=='mouse')return;
- mousePoint={clientX:e.clientX,clientY:e.clientY};
- if(phase==='intro')scene.classList.toggle('intro-card-hover',pick(e)>=0);
- if(phase==='animation')updatePaperHover();
+ const prev=mousePoint;mousePoint={clientX:e.clientX,clientY:e.clientY};
+ if(phase==='intro'){scene.classList.toggle('intro-card-hover',pick(e)>=0);return}
+ if(phase!=='animation'||returning||touchHold||!prev)return;
+ const dx=e.clientX-prev.clientX,dy=e.clientY-prev.clientY;
+ if(!dx&&!dy)return;
+ const hit=pick(e)>=0;
+ if(!hit){if(hoverHold){hoverHold=false;resumeIntro()}return}
+ if(!hoverHold){hoverHold=true;pauseIntro();return}
+ unfoldTarget=clamp(unfoldTarget-dy/Math.max(160,measure().viewportH*.65),0,1);
 });
-scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'){hoverArmed=true;if(hoverHold){hoverHold=false;resumeIntro()}}});
+scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'&&hoverHold){hoverHold=false;resumeIntro()}});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
