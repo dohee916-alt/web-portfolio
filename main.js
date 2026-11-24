@@ -173,7 +173,7 @@ function renderPanel(m,u){
  // then unfurl the entire reading area from that point.
  const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,ease(clamp((u-PUSH-.025)/(.92-PUSH-.025))));
  const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
- detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,20,t)+'px';
+ detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,2,t)+'px';
  const ox=clamp(dot.x-x,0,w),oy=clamp(dot.y+m.topInset-y,0,h);
  detail.style.setProperty('--origin-x',ox+'px');detail.style.setProperty('--origin-y',oy+'px');
  detail.style.setProperty('--reveal',String(ease(clamp((u-.56)/.38))));
@@ -468,3 +468,7 @@ window.addEventListener('pointerup',endDrag);window.addEventListener('pointercan
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
 
+
+// Temporary material comparison controls; no changes to project content.
+const paperStudy=document.getElementById('paperStudy');
+if(paperStudy){const setPaper=value=>{detail.dataset.paper=value;paperStudy.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.paper===value)))};paperStudy.addEventListener('click',e=>{const b=e.target.closest('button[data-paper]');if(b)setPaper(b.dataset.paper)});setPaper('tracing')}
