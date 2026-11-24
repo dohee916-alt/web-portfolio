@@ -232,3 +232,16 @@ header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:foc
 /* Suppress native selection and tap highlight on the mobile grabber only. */
 header #fold.mobile-fold,header #fold.mobile-fold::after,header #fold.mobile-fold *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
+
+/* Paper material studies: tracing, uncoated, and translucent fibre. */
+#detail:not(.raon-mode){--paper-a:rgba(249,247,233,.94);--paper-b:rgba(229,230,207,.91);--grain-strength:.13;--fiber-strength:.07;color:#263e31;background:linear-gradient(135deg,var(--paper-a),var(--paper-b));border:1px solid #f8f4dfb3;box-shadow:0 12px 36px #00231630,inset 0 0 1px #fff9e8;isolation:isolate}
+#detail:not(.raon-mode)[data-paper="uncoated"]{--paper-a:#f5efdf;--paper-b:#e9e0c9;--grain-strength:.19;--fiber-strength:.10}
+#detail:not(.raon-mode)[data-paper="fiber"]{--paper-a:rgba(250,247,230,.86);--paper-b:rgba(227,231,211,.80);--grain-strength:.18;--fiber-strength:.13}
+#detail:not(.raon-mode)::before,#detail:not(.raon-mode)::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;z-index:-1;mix-blend-mode:multiply}
+#detail:not(.raon-mode)::before{opacity:var(--grain-strength);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+#detail:not(.raon-mode)::after{opacity:var(--fiber-strength);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.045 .48' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")}
+#detail:not(.raon-mode) #category,#detail:not(.raon-mode) #placeholder,#detail:not(.raon-mode) #close{color:#405744}
+#detail:not(.raon-mode) #paperStudy{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;margin-bottom:18px}
+#detail:not(.raon-mode) #paperStudy button{font-size:10px;letter-spacing:.03em;border:1px solid #52644a55;border-radius:2px;padding:6px 9px;background:transparent;color:#344d39}
+#detail:not(.raon-mode) #paperStudy button[aria-pressed="true"]{background:#344d3914;border-color:#52644a}
+#detail.raon-mode #paperStudy{display:none!important}
