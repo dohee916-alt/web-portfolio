@@ -206,3 +206,19 @@ header #fold.mobile-fold:active,header #fold.mobile-fold:hover{background:none;c
 header #foldEdge{position:fixed;transform:translate(-50%,-50%);width:64px;height:64px;display:grid;place-items:center;padding:0;border:0;background:transparent;border-radius:0;z-index:1001;touch-action:manipulation;pointer-events:auto}
 header #foldEdge[hidden]{display:none!important}
 header #foldEdge svg{display:block;width:19px;height:19px;transform:rotate(var(--back-angle,0deg));stroke:#86aabd;stroke-width:2.1;overflow:visible}
+
+/* Ivory controls and timeline on the dark green gallery background. */
+:root{--gallery-ivory:#f4eedc}
+header>span,header #fold,header #foldEdge,#scene #nav,#scene #nav button,#layers .anchor{color:var(--gallery-ivory)}
+#scene #nav button{border-color:transparent}
+#scene #nav button:disabled{opacity:.38}
+#scene #curve{stroke:var(--gallery-ivory)}
+#scene[data-phase=explore] #curve{stroke-opacity:.78}
+#layers .anchor:before{background:var(--gallery-ivory);border-color:#d7cdb5}
+#layers .anchor.visited:before{background:#dfd6bc;border-color:var(--gallery-ivory)}
+#layers .anchor.active:before,#scene[data-phase=explore] .anchor.active:before{background:var(--gallery-ivory);border-color:#fff9e9;box-shadow:0 0 0 5px rgba(244,238,220,.25)}
+#scene[data-phase=explore] .anchor:not(.active){opacity:.88}
+#layers .anchor span{opacity:.86}
+header #fold svg,header #fold:hover svg,header #foldEdge svg{stroke:var(--gallery-ivory)}
+header #fold.mobile-fold,header #fold.mobile-fold:hover,header #fold.mobile-fold:active{color:var(--gallery-ivory)}
+header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:focus-visible{outline:2px solid var(--gallery-ivory);outline-offset:3px}
