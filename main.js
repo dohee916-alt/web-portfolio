@@ -157,28 +157,18 @@ function archivePose(i,m,f=focus,amount=1){
  return alignTop(p,m,i,a.x+mix(Math.min(m.galleryW*.16,25),0,m.compact),a.y+mix(Math.max(35,88-lift[i]*amount*.48)*k,compactGap,m.compact));
 }
 function panelTarget(m){
- const W=m.W,H=m.viewportH;
- return mobile()?{x:18,y:H*.52,w:W-36,h:H*.43}:{x:W*.56,y:H*.20,w:W*.365,h:H*.62};
+ const W=m.W,H=m.viewportH,w=Math.min(W*(mobile()?.92:.86),H*.72*16/9),h=w*9/16;
+ return {x:(W-w)/2,y:(H-h)/2,w,h};
 }
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
 function renderPanel(m,u){
- if(detail.classList.contains('raon-mode')){
-  detail.classList.toggle('morphing',u>.35);
-  detail.classList.toggle('content-ready',u>.53);
-  detail.classList.toggle('visible',phase==='detail');
-  return;
- }
  if(!impactAnchor||u<PUSH){detail.classList.remove('morphing','visible','content-ready');return}
- const t=ease(clamp((u-PUSH)/(.94-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(PUSH,m);
- // Keep the launch point inside the growing surface: first open the mouth,
- // then unfurl the entire reading area from that point.
- const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,ease(clamp((u-PUSH-.025)/(.92-PUSH-.025))));
+ const t=ease(clamp((u-PUSH)/(.92-PUSH))),dest=panelTarget(m),r=7,dot=currentDot(PUSH,m);
+ const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,t);
  const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
  detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,2,t)+'px';
- const ox=clamp(dot.x-x,0,w),oy=clamp(dot.y+m.topInset-y,0,h);
- detail.style.setProperty('--origin-x',ox+'px');detail.style.setProperty('--origin-y',oy+'px');
- detail.style.setProperty('--reveal',String(ease(clamp((u-.56)/.38))));
- detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.58);detail.classList.toggle('visible',phase==='detail');
+ detail.style.setProperty('--reveal',String(ease(clamp((u-.90)/.10))));
+ detail.classList.add('morphing');detail.classList.toggle('content-ready',u>.90);detail.classList.toggle('visible',phase==='detail');
 }
 function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return o}
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
@@ -228,7 +218,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
       const t=clamp((u-release)/(1-release)),q=ease(t);
       const dest={...p,x:m.W*(mobile()?.5:.27),y:m.viewportH*(mobile()?.48:.78)-m.topInset,z:120,ry:-13,rz:-7,scale:mobile()?1.10:1.26,opacity:1};
       p=between(pushed,dest,q);
-      if(items[i].title==='라온이음')p.opacity*=1-ease(clamp((t-.08)/.65));
+      p.opacity*=1-ease(clamp((t-.08)/.65));
      }
     }else{const q=ease(clamp((u-.24)/.55));p.y-=q*m.viewportH*.035;p.opacity*=1-q*.83}
    }
@@ -296,17 +286,17 @@ function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;
 const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
 let raonSlideIndex=0,raonTouchStart=null;
 function renderRaonSlide(){
- const image=$('raonSlide');
+ const image=$('raonSlide');detail.classList.remove('slide-loaded');image.style.visibility='hidden';
  image.src=RAON_SLIDES[raonSlideIndex];
  image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
- image.onerror=()=>{image.style.visibility='hidden';$('raonCount').textContent='이미지 파일 미등록 · '+String(raonSlideIndex+1).padStart(2,'0')+' / 06';};
- image.onload=()=>{image.style.visibility='visible';};
+ image.onerror=()=>{image.style.visibility='hidden';detail.classList.remove('slide-loaded');};
+ image.onload=()=>{image.style.visibility='visible';detail.classList.add('slide-loaded');};
  $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
  $('raonPrev').disabled=raonSlideIndex===0;
  $('raonNext').disabled=raonSlideIndex===RAON_SLIDES.length-1;
 }
 function moveRaonSlide(direction){
- if(!detail.classList.contains('raon-mode')||!['detail','opening'].includes(phase))return;
+ if(!detail.classList.contains('has-slides')||!['detail','opening'].includes(phase))return;
  const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);
  if(next===raonSlideIndex)return;
  raonSlideIndex=next;
@@ -330,8 +320,8 @@ function open(i){
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());
  const p=items[i],isRaon=p.title==='라온이음';
- detail.classList.toggle('raon-mode',isRaon);
- $('raonReader').hidden=!isRaon;
+ detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',isRaon);
+ $('raonReader').hidden=!isRaon;detail.classList.remove('slide-loaded');
  $('category').textContent=p.category;
  $('projectTitle').textContent=p.title;
  $('projectDesc').textContent=p.description;
@@ -472,7 +462,7 @@ window.addEventListener('touchend',finishIntroTouch,{passive:false});
 window.addEventListener('touchcancel',finishIntroTouch,{passive:false});
 window.addEventListener('blur',()=>{if(!introTouch&&!touchHold)return;introTouch=null;drag=null;touchHold=false;hoverHold=false;if(phase==='animation'&&!returning&&!launchLocked){autoUnfold=true;resumeIntro()}});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
 
 
