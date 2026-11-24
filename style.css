@@ -164,3 +164,23 @@ header #fold{transform:translate(-50%,-50%);width:44px;height:44px;left:0;top:0}
 
 /* The return chevron is the arrowhead of the timeline itself. */
 header #fold svg{width:19px;height:19px;transform:rotate(var(--back-angle,0deg));stroke:#86aabd;stroke-width:2.1;overflow:visible}header #fold:hover svg{stroke:#355a75}
+
+/* RAON only — retain original curve and anchor impact; replace both detail cards with the 16:9 presentation. */
+#detail.raon-mode{position:fixed!important;inset:auto!important;left:50%!important;top:50%!important;width:min(86vw,calc(77dvh * 16 / 9))!important;height:auto!important;max-width:none!important;max-height:94dvh!important;margin:0!important;padding:0!important;transform:translate(-50%,-50%)!important;overflow:visible!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;pointer-events:none;visibility:hidden;opacity:0;z-index:850;}
+#detail.raon-mode.morphing{visibility:visible;opacity:1}
+#detail.raon-mode.visible{pointer-events:auto}
+#detail.raon-mode #category,#detail.raon-mode #projectTitle,#detail.raon-mode #projectDesc,#detail.raon-mode #placeholder{display:none!important}
+#detail.raon-mode #raonReader{display:block!important;margin:0!important;padding:0!important;opacity:0;transform:translateY(14px) scale(.985)!important;transition:opacity .36s cubic-bezier(.2,.75,.2,1),transform .45s cubic-bezier(.2,.75,.2,1)!important;}
+#detail.raon-mode.content-ready #raonReader{opacity:1;transform:translateY(0) scale(1)!important;pointer-events:auto}
+#detail.raon-mode .raon-reader-media{width:100%;aspect-ratio:16 / 9;background:#ffffff;overflow:hidden;box-shadow:0 24px 65px #24445b36;border:1px solid #ffffffba;}
+#detail.raon-mode #raonSlide{display:block;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+#detail.raon-mode #raonSlide.page-enter{animation:raon-slide-in .28s ease-out both}
+@keyframes raon-slide-in{from{opacity:.32;filter:blur(3px)}to{opacity:1;filter:blur(0)}}
+#detail.raon-mode .raon-reader-nav{display:flex;justify-content:center;align-items:center;gap:26px;margin-top:12px;color:#244459;letter-spacing:.13em;font-size:12px;}
+#detail.raon-mode .raon-reader-nav button{display:grid;place-items:center;width:38px;height:34px;font-size:22px;font-weight:300;color:#355a75;border:1px solid #5d839d44;border-radius:24px;background:#eff9ffb9;cursor:pointer;}
+#detail.raon-mode .raon-reader-nav button:disabled{opacity:.25;cursor:default}
+#detail.raon-mode #close{position:absolute;top:-40px;right:0!important;margin:0!important;padding:4px 8px;z-index:10;background:#ecf7ffcc;border:1px solid #8da8bd88;border-radius:50%;font-size:23px;line-height:27px;width:36px;height:36px;color:#244459;opacity:1!important;transform:none!important;pointer-events:auto}
+#detail.raon-mode #close:focus-visible,#detail.raon-mode button:focus-visible{outline:2px solid #2c6288;outline-offset:3px}
+#detail.raon-mode #raonReader[hidden]{display:none!important}
+@media(max-width:600px){#detail.raon-mode{width:96vw!important;top:48%!important}#detail.raon-mode #close{top:-48px}#detail.raon-mode .raon-reader-nav{margin-top:16px;gap:30px}}
+@media(prefers-reduced-motion:reduce){#detail.raon-mode #raonReader,#detail.raon-mode #raonSlide.page-enter{transition:none!important;animation:none!important}}
