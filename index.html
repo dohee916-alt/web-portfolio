@@ -5,7 +5,18 @@
 <main id="scene" data-phase="intro" aria-label="Interactive portfolio"><div class="heading" hidden aria-hidden="true"><p id="eyebrow">01 / LAYERS</p><h1 id="headline">Layers of experience.</h1><p id="hint">스크롤하여 레이어를 펼치세요.</p></div>
 <p id="stillGrowing">Still growing...</p>
 <div id="world"><svg id="curve" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true"><path d="M 0 350 Q 500 30 1000 350"/></svg><div id="layers"></div></div>
-<button id="contactSeed" type="button" hidden aria-label="Water the seed — Contact"><span>Contact</span><svg viewBox="0 0 24 30" aria-hidden="true"><path d="M18 4C6 5 2 14 7 22C13 28 22 17 18 4Z" fill="#c7b791" stroke="#f4eedc" stroke-width=".7"/><path d="M7 22Q14 13 18 4" fill="none" stroke="#746c51" stroke-width=".9"/></svg></button>
+<div id="contactBloom" hidden data-growth="seed">
+<button id="contactSeed" type="button" aria-label="Water the seed to see contact details" aria-expanded="false" aria-controls="bloomInfo"><span>Water to connect</span><svg id="seedStage" data-growth="seed" viewBox="0 0 240 190" role="img" aria-label="A seed that sprouts when watered">
+<g fill="#b8ded2"><path class="water-drop" d="M108 25Q98 39 108 42Q118 39 108 25Z"/><path class="water-drop" d="M126 18Q117 31 126 34Q135 31 126 18Z"/><path class="water-drop" d="M139 32Q131 43 139 46Q147 43 139 32Z"/></g>
+<ellipse cx="120" cy="160" rx="38" ry="4" fill="#09291f" opacity=".5"/>
+<path class="sprout-stem" d="M120 148C113 123 125 98 120 58" fill="none" stroke="#c4d2ab" stroke-width="2.5" stroke-linecap="round"/>
+<g class="sprout-leaf"><path d="M121 106C88 107 79 88 76 74C100 72 120 85 121 106Z" fill="#a9bd90"/><path d="M121 106Q98 87 84 81" stroke="#e1e4c9" stroke-width=".7" fill="none"/></g>
+<g class="sprout-leaf"><path d="M120 81C122 53 142 45 164 41C163 66 141 82 120 81Z" fill="#c9d3a9"/><path d="M120 81Q144 59 157 48" stroke="#f4eedc" stroke-width=".7" fill="none"/></g>
+<g class="seed-shell seed-left"><path d="M120 123C103 124 97 140 104 151Q111 160 120 154Z" fill="#c0ae86" stroke="#e0d4b2" stroke-width=".8"/><path d="M120 126Q106 139 112 151" fill="none" stroke="#857653" stroke-width=".8"/></g>
+<g class="seed-shell seed-right"><path d="M120 123C134 122 142 134 136 146Q130 157 120 154Z" fill="#a69470" stroke="#e0d4b2" stroke-width=".8"/><path d="M123 128Q134 139 124 151" fill="none" stroke="#d7c69e" stroke-width=".8"/></g>
+</svg></button>
+<div id="bloomInfo" hidden aria-live="polite"><span class="bloom-title">Let's grow together.</span><div id="bloomLinks"></div></div>
+</div>
 <div id="nav" hidden><button id="prev" aria-label="Previous project">←</button><span id="counter"></span><button id="next" aria-label="Next project">→</button></div></main>
 <dialog id="detail"><button id="close" aria-label="Close project">×</button><p id="category"></p><h2 id="projectTitle"></h2><p id="projectDesc"></p><div id="placeholder">Project content — placeholder</div>
 <div id="paperStudy" aria-label="종이 소재 비교"><button type="button" data-paper="tracing">Tracing</button><button type="button" data-paper="uncoated">Uncoated</button><button type="button" data-paper="fiber">Fiber</button></div>
@@ -15,19 +26,7 @@
 </div></dialog>
 <dialog id="contactDialog" aria-labelledby="contactTitle">
 <button id="contactClose" type="button" aria-label="Close contact">×</button>
-<p class="contact-kicker">FOLI:ON · CONTACT</p><h2 id="contactTitle">Help me grow.</h2>
-<svg id="seedStage" data-growth="seed" viewBox="0 0 240 190" role="img" aria-label="A seed that sprouts when watered">
-<g fill="#b8ded2"><path class="water-drop" d="M108 25Q98 39 108 42Q118 39 108 25Z"/><path class="water-drop" d="M126 18Q117 31 126 34Q135 31 126 18Z"/><path class="water-drop" d="M139 32Q131 43 139 46Q147 43 139 32Z"/></g>
-<ellipse cx="120" cy="160" rx="38" ry="4" fill="#09291f" opacity=".5"/>
-<path class="sprout-stem" d="M120 148C113 123 125 98 120 58" fill="none" stroke="#c4d2ab" stroke-width="2.5" stroke-linecap="round"/>
-<g class="sprout-leaf"><path d="M121 106C88 107 79 88 76 74C100 72 120 85 121 106Z" fill="#a9bd90"/><path d="M121 106Q98 87 84 81" stroke="#e1e4c9" stroke-width=".7" fill="none"/></g>
-<g class="sprout-leaf"><path d="M120 81C122 53 142 45 164 41C163 66 141 82 120 81Z" fill="#c9d3a9"/><path d="M120 81Q144 59 157 48" stroke="#f4eedc" stroke-width=".7" fill="none"/></g>
-<g class="seed-shell seed-left"><path d="M120 123C103 124 97 140 104 151Q111 160 120 154Z" fill="#c0ae86" stroke="#e0d4b2" stroke-width=".8"/><path d="M120 126Q106 139 112 151" fill="none" stroke="#857653" stroke-width=".8"/></g>
-<g class="seed-shell seed-right"><path d="M120 123C134 122 142 134 136 146Q130 157 120 154Z" fill="#a69470" stroke="#e0d4b2" stroke-width=".8"/><path d="M123 128Q134 139 124 151" fill="none" stroke="#d7c69e" stroke-width=".8"/></g>
-</svg>
-<p id="contactStatus" aria-live="polite">A little water, a little more growth.</p>
-<button id="waterSeed" type="button">Water the seed</button>
-<button id="contactSkip" type="button">View contact details</button>
-<div id="contactInfo" hidden aria-live="polite"></div>
+<p class="contact-kicker">FOLI:ON</p><h2 id="contactTitle">Contact</h2>
+<div id="contactInfo"></div>
 </dialog>
 <script src="./contact.js?v=seed-contact-584a225"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=seed-contact-32139a2"></script></body></html>
