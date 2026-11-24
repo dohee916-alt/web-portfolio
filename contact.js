@@ -12,7 +12,7 @@ const CONTACT = { email: "", links: [] };
    if(!link.label||!/^https:\/\//i.test(link.url))continue;
    const a=document.createElement('a');a.href=link.url;a.textContent=link.label;a.target='_blank';a.rel='noopener noreferrer';container.append(a);
   }
-  if(!container.children.length){const p=document.createElement('p');p.className='contact-preview';p.textContent='Contact details coming soon.';container.append(p)}
+  if(!container.children.length&&container===info){const p=document.createElement('p');p.className='contact-preview';p.textContent='Contact details coming soon.';container.append(p)}
  }
  fill(info);fill(document.getElementById('bloomLinks'));
  openButton.addEventListener('click',()=>{if(!dialog.open)dialog.showModal()});
