@@ -209,6 +209,8 @@ function renderRaonSlide(){
  const image=$('raonSlide');
  image.src=RAON_SLIDES[raonSlideIndex];
  image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
+ image.onerror=()=>{image.style.visibility='hidden';$('raonCount').textContent='이미지 파일 미등록 · '+String(raonSlideIndex+1).padStart(2,'0')+' / 06';};
+ image.onload=()=>{image.style.visibility='visible';};
  $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
  $('raonPrev').disabled=raonSlideIndex===0;
  $('raonNext').disabled=raonSlideIndex===RAON_SLIDES.length-1;
