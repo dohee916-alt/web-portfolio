@@ -5,7 +5,8 @@ const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
-function setPhase(p){phase=p;scene.dataset.phase=p;$('fold').hidden=p!=='explore'||focus>-.965||target>-.965}
+const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
+function setPhase(p){phase=p;scene.dataset.phase=p;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
 items.forEach((p,i)=>{
  const card=document.createElement('button');card.className='layer';card.type='button';card.disabled=true;card.setAttribute('aria-label',p.title);card.style.setProperty('--color',p.color);
  const shell=document.createElement('div');shell.className='sheet';const strips=[];
@@ -238,15 +239,15 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  }
  opticalRender(m);
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
- const atStart=phase==='explore'&&focus<-.965&&target<-.965;
+ const touchBack=touchLayout(),atStart=!touchBack&&phase==='explore'&&focus<-.965&&target<-.965;
  const ba=backAt(m),a0=atStart?ba:anchorAt(0,m),a1=anchorAt(N-1,m);
  // Exact quadratic between the same track coordinates used by the anchors.
  const midX=(a0.x+a1.x)/2,midY=2*trackY(midX,m)-(a0.y+a1.y)/2;
  path.setAttribute('d','M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
  const back=$('fold'),br=root.getBoundingClientRect();
- back.hidden=!atStart;back.style.left=(br.left+ba.x)+'px';back.style.top=(br.top+ba.y+5)+'px';
+ back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
  const tangent=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2)*180/Math.PI;
- back.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
+ back.style.setProperty('--back-angle',touchBack?'-90deg':tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
@@ -326,7 +327,8 @@ function close(){
  closeFrom=detailProgress(performance.now());detail.classList.remove('visible');
  detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')
 }
-$('close').onclick=close;$('fold').onclick=()=>{if(phase==='explore'){enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;gate=false;returning=true;}};
+$('close').onclick=close;function foldBack(){if(phase==='explore'){enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;gate=false;returning=true;}}$('fold').onclick=foldBack;
+let foldTouch=null;const foldButton=$('fold');foldButton.addEventListener('pointerdown',e=>{if(!touchLayout()||phase!=='explore'||e.isPrimary===false)return;foldTouch={id:e.pointerId,y:e.clientY};foldButton.setPointerCapture(e.pointerId)});foldButton.addEventListener('pointermove',e=>{if(foldTouch&&foldTouch.id===e.pointerId&&e.clientY-foldTouch.y>18){foldTouch=null;foldBack()}});for(const type of ['pointerup','pointercancel','lostpointercapture'])foldButton.addEventListener(type,()=>{foldTouch=null});
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 let wheelAxis=null,returning=false,launchLocked=false;
