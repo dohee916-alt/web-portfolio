@@ -214,15 +214,21 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
     if(i===selected){
      const start=impactPose||p;
      const contact=alignTop({...start},m,i,hit.x,hit.y+12);
+     const release=HIT+(PUSH-HIT)*.56;
+     const pushedDot=flight(release,m);
+     const pushed=alignTop({...contact},m,i,pushedDot.x,pushedDot.y+7);
      if(u<HIT){
-      const q=clamp(u/HIT);p=between(start,contact,q*q*q);
+      const q=clamp(u/HIT);p=between(start,contact,ease(q));
+     }else if(u<=release){
+      // The paper edge stays in contact with the underside of the moving dot.
+      const dot=flight(u,m);
+      p=alignTop({...contact},m,i,dot.x,dot.y+7);
      }else{
-      // Recoil, then peel away: the dot has its own much faster trajectory.
-      const t=clamp((u-HIT)/(1-HIT)),q=1-Math.pow(1-t,3);
+      // Only after the shared push does the paper peel away.
+      const t=clamp((u-release)/(1-release)),q=ease(t);
       const dest={...p,x:m.W*(mobile()?.5:.27),y:m.viewportH*(mobile()?.48:.78)-m.topInset,z:120,ry:-13,rz:-7,scale:mobile()?1.10:1.26,opacity:1};
-      p=between(contact,dest,q);
-       if(items[i].title==='라온이음')p.opacity*=1-ease(clamp((t-.12)/.58));
-      p.y+=Math.sin(Math.PI*clamp(t/.24))*Math.min(24,m.H*.045)*(t<.24?1:0);
+      p=between(pushed,dest,q);
+      if(items[i].title==='라온이음')p.opacity*=1-ease(clamp((t-.08)/.65));
      }
     }else{const q=ease(clamp((u-.24)/.55));p.y-=q*m.viewportH*.035;p.opacity*=1-q*.83}
    }
