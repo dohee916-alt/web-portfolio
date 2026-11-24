@@ -108,7 +108,7 @@ function measure(){
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
  return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
-  trackW:Math.min(W,V*1.6),trackStep:W*mix(.84/(N-1),.34,compact)};
+  trackW:Math.min(W,V*1.6),trackStep:Math.min(W*.84/(N-1),galleryW*mix(.70,.36,compact))};
 }
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
@@ -148,7 +148,7 @@ function currentDot(u,m){return flight(u,m)}
 function archivePose(i,m,f=focus,amount=1){
  const d=i-f,a=anchorAt(i,m,f),t=clamp(a.x/m.W),k=m.galleryW/260;
  const size=m.galleryW/m.w*mix(.96,1.04,m.compact);
- const p={x:a.x,y:a.y+m.h,z:(55+t*105+lift[i]*.35*amount)*k,ry:-38+t*14,rz:-24+t*12,fall:0,opacity:clamp(1-(Math.abs(d)-mix(4.1,1.35,m.compact))*.65),scale:size};
+ const p={x:a.x,y:a.y+m.h,z:(55+t*105+lift[i]*.35*amount)*k,ry:-38+t*14,rz:-24+t*12,fall:0,opacity:clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
  return alignTop(p,m,i,a.x+Math.min(m.galleryW*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48)*k);
 }
 function panelTarget(m){
@@ -222,7 +222,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=ax<20||ax>m.W-20||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';a.querySelectorAll('span,b').forEach(el=>el.style.visibility=m.compact>.55&&Math.abs(i-Math.round(focus))>0?'hidden':'');a.style.visibility=ax<20||ax>m.W-20||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
