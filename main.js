@@ -150,7 +150,8 @@ function archivePose(i,m,f=focus,amount=1){
  const d=i-f,a=anchorAt(i,m,f),t=clamp(a.x/m.W),k=m.galleryW/260;
  const size=m.galleryW/m.w*mix(.96,1.04,m.compact);
  const p={x:a.x,y:a.y+m.h,z:(55+t*105+lift[i]*.35*amount)*k,ry:-38+t*14,rz:-24+t*12,fall:0,opacity:clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
- return alignTop(p,m,i,a.x+Math.min(m.galleryW*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48)*k);
+ const compactGap=m.galleryW*.32+5;
+ return alignTop(p,m,i,a.x+mix(Math.min(m.galleryW*.16,25),0,m.compact),a.y+mix(Math.max(35,88-lift[i]*amount*.48)*k,compactGap,m.compact));
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -225,7 +226,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.querySelectorAll('span,b').forEach(el=>el.style.visibility=m.compact>.55&&Math.abs(i-Math.round(focus))>0?'hidden':'');a.style.visibility=ax<20||ax>m.W-20||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';a.querySelectorAll('span,b').forEach(el=>el.style.visibility=m.compact>.55&&Math.abs(i-Math.round(focus))>0?'hidden':'');const edge=Math.min(ax,m.W-ax);a.style.visibility=edge<(m.compact>.55?-7:20)||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.style.setProperty('--edge-fade',String(m.compact>.55?clamp((edge+7)/17):1));a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
