@@ -108,7 +108,7 @@ function measure(){
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
  return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
-  trackW:Math.min(W,V*1.6),trackStep:Math.min(W*.84/(N-1),galleryW*mix(.70,.36,compact))};
+  trackW:Math.min(W,V*1.6),trackStep:mix(Math.min(W*.84/(N-1),galleryW*.70),galleryW*.55,compact)};
 }
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
@@ -185,7 +185,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+dt/3);unfoldTarget=1}
   else if(held()){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*24));if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
-  else if(autoUnfold){const speed=1/3+releaseBoost;unfold=Math.min(1,unfold+dt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
+  else if(autoUnfold){const speed=(mobile()?1/6.8:1/3)+releaseBoost;unfold=Math.min(1,unfold+dt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
   if(!returning&&!launchLocked&&unfold>=DOWN_END/LAUNCH_END-.0001){launchLocked=true;clearIntroControl();unfoldTarget=1;drag=null;scene.classList.remove('dragging')}
  }
  if(phase==='animation'&&returning&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
@@ -333,7 +333,7 @@ let wheelAxis=null,returning=false,launchLocked=false;
 let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
 function held(){return !launchLocked&&(hoverHold||touchHold)}
 function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
-function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=.25}}
+function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=mobile()?.12:.25}}
 function clearIntroControl(){hoverArmed=false;hoverHold=false;touchHold=false;releaseBoost=0;}
 scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
