@@ -37,14 +37,19 @@ for(let i=0;i<320;i++){
 const paperGrain=ctx.createPattern(grainTile,'repeat');
 function project(x,y,z,m){const camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);return [m.W*.5+(x-m.W*.5)*k,m.H*.4+(y-m.H*.4)*k,z]}
 function mesh(p,m,i){
- const rows=p.fall>0.0001?64:1, L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
+ const bent=p.fall>0.0001,L=[],R=[],rad=Math.PI/180,ry=p.ry*rad,rz=p.rz*rad,cy=Math.cos(ry),sy=Math.sin(ry),cz=Math.cos(rz),sz=Math.sin(rz);
  let yy=0,zz=0;
- const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz;return project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m)};
- for(let j=0;j<=rows;j++){
-  if(j){const u=(j-.5)/rows,t=p.fall;const a=Math.PI*.5*ease(clamp(t*1.7+u*.7-.7))+Math.sin(Math.PI*t)*Math.sin(Math.PI*u)*.68;yy-=Math.cos(a)*m.h/rows;zz+=Math.sin(a)*m.h/rows}
-  L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz))
- }
- return {i,L,R,p,poly:L.concat(R.slice().reverse())}
+ const convert=(x,y,z)=>{x*=p.scale;y*=p.scale;z*=p.scale;const a=x*cz-y*sz,b=x*sz+y*cz,v=project(p.x+a*cy+z*sy,p.y+b,p.z-a*sy+z*cy,m);v[1]+=z*.65;return v};
+ L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz));
+ if(bent){
+  // Two actual paper faces meet at a crease: the lower face folds first.
+  const lower=Math.PI*.5*ease(clamp(p.fall*1.65)),upper=Math.PI*.5*ease(clamp((p.fall-.25)/.75)),crease=.46;
+  yy-=Math.cos(lower)*m.h*crease;zz+=Math.sin(lower)*m.h*crease;
+  L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz));
+  yy-=Math.cos(upper)*m.h*(1-crease);zz+=Math.sin(upper)*m.h*(1-crease);
+ }else yy=-m.h;
+ L.push(convert(-m.w/2,yy,zz));R.push(convert(m.w/2,yy,zz));
+ return {i,L,R,bent,p,poly:L.concat(R.slice().reverse())}
 }
 function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
 function opticalRender(m){
@@ -54,19 +59,32 @@ function opticalRender(m){
  surface.style.top=(-m.topInset)+'px';surface.style.width=m.W+'px';surface.style.height=m.viewportH+'px';
  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);
  ctx.setTransform(dpr,0,0,dpr,0,m.topInset*dpr);
- silhouettes=poses.map((p,i)=>mesh(p,m,i)).sort((a,b)=>(a.p.z+(a.i===selected?500:0))-(b.p.z+(b.i===selected?500:0)));
- for(const s of silhouettes){const {p,L,R,poly}=s;if(p.opacity<.01)continue;
-  ctx.save();ctx.globalAlpha=p.opacity;shape(poly);
+ silhouettes=poses.map((p,i)=>mesh(p,m,i)).sort((a,b)=>{
+  if(phase==='animation'){const rank=s=>s.p.fall>0&&s.p.fall<1?2:s.p.fall===0?1:0;return rank(a)-rank(b)||a.p.z-b.p.z}
+  return (a.p.z+(a.i===selected?500:0))-(b.p.z+(b.i===selected?500:0));
+ });
+ for(const s of silhouettes){const {p,L,R,bent,poly}=s;if(p.opacity<.01)continue;
+  ctx.save();ctx.globalAlpha=p.opacity;
    const g=ctx.createLinearGradient(L[0][0],L[0][1],R[R.length-1][0],R[R.length-1][1]);
    g.addColorStop(0,'rgba(253,252,245,.52)');g.addColorStop(.28,'rgba(247,248,240,.38)');g.addColorStop(.72,'rgba(250,250,242,.42)');g.addColorStop(1,'rgba(238,243,234,.47)');
-   ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-   ctx.save();shape(poly);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
-   ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(poly);ctx.stroke();
+   const paintFace=(face,tint)=>{
+    ctx.beginPath();face.forEach((q,j)=>j?ctx.lineTo(...q):ctx.moveTo(...q));ctx.closePath();
+    ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    if(tint){ctx.fillStyle=tint;ctx.fill()}
+    ctx.save();ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
+    ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;ctx.stroke();
+   };
+   if(bent){
+    const strength=Math.sin(Math.PI*p.fall);
+    paintFace([L[1],R[1],R[2],L[2]],'rgba(33,67,48,'+(strength*.11)+')');
+    paintFace([L[0],R[0],R[1],L[1]],'rgba(255,253,241,'+(strength*.29)+')');
+    ctx.beginPath();ctx.moveTo(...L[1]);ctx.lineTo(...R[1]);ctx.strokeStyle='rgba(44,71,50,'+(strength*.42)+')';ctx.lineWidth=1.1;ctx.stroke();
+   }else{shape(poly);ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.save();shape(poly);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(poly);ctx.stroke()}
    ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(102,117,104,.18)';ctx.lineWidth=.7;ctx.stroke();ctx.restore()
  }
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
-function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
+function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&(s.bent?(inside(x,y,[s.L[0],s.R[0],s.R[1],s.L[1]])||inside(x,y,[s.L[1],s.R[1],s.R[2],s.L[2]])):inside(x,y,s.poly)))return s.i}return -1}
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&pick(e)>=0)start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
 function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.19,260);return {W:r.width,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:s.height}}
@@ -130,7 +148,7 @@ function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
 }
-const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35,AUTO_DURATION=reduced?.45:Math.max(3.2,LAUNCH_END*1.12);
+const FALL_STAGGER=.42,FALL_DURATION=.44,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35,AUTO_DURATION=reduced?.45:Math.max(3.2,LAUNCH_END*1.12);
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){if(returning)unfold=Math.max(0,unfold-dt/LAUNCH_END);else if(autoUnfold&&!hoverScrubbing&&!holdScrubbing){unfold=Math.min(1,unfold+dt*autoRate/AUTO_DURATION);unfoldTarget=unfold}else{unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*32));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget}}
  if(phase==='animation'&&unfold===0&&unfoldTarget===0&&!hoverScrubbing&&!holdScrubbing){returning=false;autoUnfold=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
