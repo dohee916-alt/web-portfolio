@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=contact-centered-email"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=shared-contact-leaf"></head>
 <body><header><span>FOLI:ON</span><button id="fold" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="foldEdge" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="contactOpen" type="button">Contact</button></header>
 <main id="scene" data-phase="intro" aria-label="Interactive portfolio"><div class="heading" hidden aria-hidden="true"><p id="eyebrow">01 / LAYERS</p><h1 id="headline">Layers of experience.</h1><p id="hint">스크롤하여 레이어를 펼치세요.</p></div>
 <p id="stillGrowing">Still growing...</p>
@@ -11,7 +11,7 @@
 <ellipse cx="120" cy="160" rx="38" ry="4" fill="#09291f" opacity=".5"/>
 <path class="sprout-stem" d="M120 148C113 123 125 98 120 58" fill="none" stroke="#c4d2ab" stroke-width="2.5" stroke-linecap="round"/>
 <g class="sprout-leaf"><path d="M121 106C88 107 79 88 76 74C100 72 120 85 121 106Z" fill="#a9bd90"/><path d="M121 106Q98 87 84 81" stroke="#e1e4c9" stroke-width=".7" fill="none"/></g>
-<g class="sprout-leaf"><path d="M120 81C122 53 142 45 164 41C163 66 141 82 120 81Z" fill="#c9d3a9"/><path d="M120 81Q144 59 157 48" stroke="#f4eedc" stroke-width=".7" fill="none"/></g>
+<g id="detachableLeaf" class="sprout-leaf"><path d="M120 81C122 53 142 45 164 41C163 66 141 82 120 81Z" fill="#c9d3a9"/><path d="M120 81Q144 59 157 48" stroke="#f4eedc" stroke-width=".7" fill="none"/></g>
 <g class="seed-shell seed-left"><path d="M120 123C103 124 97 140 104 151Q111 160 120 154Z" fill="#c0ae86" stroke="#e0d4b2" stroke-width=".8"/><path d="M120 126Q106 139 112 151" fill="none" stroke="#857653" stroke-width=".8"/></g>
 <g class="seed-shell seed-right"><path d="M120 123C134 122 142 134 136 146Q130 157 120 154Z" fill="#a69470" stroke="#e0d4b2" stroke-width=".8"/><path d="M123 128Q134 139 124 151" fill="none" stroke="#d7c69e" stroke-width=".8"/></g>
 </svg></button>
@@ -26,7 +26,13 @@
 </div></dialog>
 <dialog id="contactDialog" aria-labelledby="contactTitle">
 <button id="contactClose" type="button" aria-label="Close contact">×</button>
-<p class="contact-kicker">Contact</p><h2 id="contactTitle"><a href="mailto:dohee916@gmail.com">dohee916@gmail.com</a></h2>
-<div id="contactInfo"></div>
+<div id="contactLeafSurface">
+<svg viewBox="0 0 540 300" aria-hidden="true">
+ <defs><linearGradient id="contactLeafColor" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#a9bd90"/><stop offset=".53" stop-color="#c9d3a9"/><stop offset="1" stop-color="#d8dfbd"/></linearGradient></defs>
+ <path d="M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z" fill="url(#contactLeafColor)"/>
+ <path d="M8 246 Q253 145 532 52" fill="none" stroke="#f4eedc" stroke-width="1.5" opacity=".35"/>
+</svg>
+<div class="contact-copy"><p class="contact-kicker">Contact</p><h2 id="contactTitle"><a id="contactEmail" href="mailto:dohee916@gmail.com">dohee916@gmail.com</a></h2></div>
+</div>
 </dialog>
-<script src="./contact.js?v=public-email"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=stable-fold-width"></script></body></html>
+<script src="./contact.js?v=leaf-flight-88d8165"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=stable-fold-width"></script></body></html>
