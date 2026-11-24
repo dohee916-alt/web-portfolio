@@ -272,7 +272,7 @@ function navigate(delta,axis='y'){
  if(phase==='intro'){if(delta<=0)return;start();return}
  if(phase==='animation'&&touchHold)unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,1);
 }
-function reset(){clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
 const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
 let raonSlideIndex=0,raonTouchStart=null;
@@ -331,7 +331,7 @@ function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 let wheelAxis=null,returning=false,launchLocked=false;
 let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
-function held(){return hoverHold||touchHold}
+function held(){return !launchLocked&&(hoverHold||touchHold)}
 function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
 function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=.25}}
 function clearIntroControl(){hoverArmed=false;hoverHold=false;touchHold=false;releaseBoost=0;}
@@ -348,8 +348,9 @@ scene.addEventListener('wheel',e=>{
  navigate(units,gallery?'x':'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
- // Start on actual touch contact, without waiting for a synthesized click.
- if(phase==='intro'&&e.pointerType!=='mouse'&&e.isPrimary!==false&&!e.target.closest('#nav, #reset, #detail')){e.preventDefault();drag=null;start();return}
+ // Touch gestures during the intro are owned exclusively by the touch handlers below.
+ if(e.pointerType==='touch'&&(phase==='intro'||phase==='animation'))return;
+ if(phase==='intro'&&e.pointerType==='pen'&&e.isPrimary!==false){e.preventDefault();start();return}
  if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
@@ -366,7 +367,7 @@ function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+3
 // Only actual pointer movement can interrupt automatic playback.
 let mousePoint=null;
 scene.addEventListener('pointermove',e=>{
- if(e.pointerType!=='mouse')return;
+ if(e.pointerType!=='mouse'||matchMedia('(hover: none) and (pointer: coarse)').matches)return;
  const prev=mousePoint;mousePoint={clientX:e.clientX,clientY:e.clientY};
  if(phase==='intro'){scene.classList.toggle('intro-card-hover',pick(e)>=0);return}
  if(phase!=='animation'||returning||launchLocked||touchHold||!prev)return;
@@ -378,6 +379,39 @@ scene.addEventListener('pointermove',e=>{
  unfoldTarget=clamp(unfoldTarget-dy/Math.max(160,measure().viewportH*.65),0,1);
 });
 scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'&&!launchLocked&&hoverHold){hoverHold=false;resumeIntro()}});
+// Native touch ownership: independent of mouse hover, click synthesis, and gallery drag.
+let introTouch=null;
+scene.addEventListener('touchstart',e=>{
+ if(!['intro','animation'].includes(phase)||returning||launchLocked||introTouch||e.target.closest('#nav, #reset, #detail'))return;
+ const t=e.changedTouches[0];if(!t)return;
+ e.preventDefault();drag=null;hoverHold=false;
+ const initial=phase==='intro';
+ if(initial)start();
+ introTouch={id:t.identifier,y:t.clientY,initial,travel:0};
+ if(!initial){touchHold=true;pauseIntro()}
+},{passive:false});
+window.addEventListener('touchmove',e=>{
+ if(!introTouch||phase!=='animation')return;
+ const t=Array.from(e.changedTouches).find(v=>v.identifier===introTouch.id);if(!t)return;
+ e.preventDefault();
+ if(launchLocked||returning)return;
+ const dy=t.clientY-introTouch.y;introTouch.y=t.clientY;introTouch.travel+=dy;
+ // A first tap starts playback; dragging that same contact also grabs the sheet.
+ if(!touchHold){if(Math.abs(introTouch.travel)<5)return;touchHold=true;pauseIntro()}
+ const range=Math.max(100,measure().viewportH*.42);
+ unfoldTarget=clamp(unfoldTarget-dy/range,0,1);
+},{passive:false});
+function finishIntroTouch(e){
+ if(!introTouch)return;
+ if(!Array.from(e.changedTouches).some(v=>v.identifier===introTouch.id))return;
+ if(e.cancelable)e.preventDefault();
+ introTouch=null;drag=null;
+ if(phase==='animation'&&!returning&&!launchLocked){hoverHold=false;touchHold=false;autoUnfold=true;resumeIntro()}
+ else touchHold=false;
+}
+window.addEventListener('touchend',finishIntroTouch,{passive:false});
+window.addEventListener('touchcancel',finishIntroTouch,{passive:false});
+window.addEventListener('blur',()=>{if(!introTouch&&!touchHold)return;introTouch=null;drag=null;touchHold=false;hoverHold=false;if(phase==='animation'&&!returning&&!launchLocked){autoUnfold=true;resumeIntro()}});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
