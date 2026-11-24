@@ -109,15 +109,15 @@ scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blo
 
 function measure(){
  const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
- // Continuous, monotonic intro sizing across mobile and desktop widths.
- const w=Math.min(260, W*.43, Math.max(185,W*.19));
+ // Fixed intro paper size; shrink only to fit a small viewport.
+ const w=Math.min(185,W*.43,V*.48/(9.5/7*1.15));
  // Layout is determined by the available viewport, not the input device.
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
  return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
   trackW:Math.min(W,V*1.6),trackStep:mix(Math.min(W*.84/Math.max(1,Math.min(N-1,7)),galleryW*.70),galleryW*.55,compact)};
 }
-function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*Math.min(12,84/Math.max(1,N-1)),ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
+function introPose(i,m){return {x:m.W*.5,y:m.viewportH*.5-m.topInset+m.h*1.15/2,z:-i*Math.min(12,84/Math.max(1,N-1)),ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
