@@ -101,17 +101,33 @@ function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.lengt
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
 scene.addEventListener('click',e=>{if(phase==='intro'){if(performance.now()>=blockClick&&!e.target.closest('#nav, #reset, #detail'))start();return}if(phase!=='explore'||performance.now()<blockClick||e.target.closest('.anchor, #nav, #reset, #detail, .heading'))return;const i=pick(e);if(i<0)return;if(i!==Math.round(focus)){target=i;wheelAt=0;return}open(i)});
 
-function measure(){const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect();const w=mobile()?Math.min(r.width*.43,185):Math.min(r.width*.19,260);return {W:r.width,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:s.height}}
+function measure(){
+ const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
+ const w=mobile()?Math.min(W*.43,185):Math.min(W*.19,260);
+ // Layout is determined by the available viewport, not the input device.
+ const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
+ const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
+ return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
+  trackW:Math.min(W,V*1.6),trackStep:W*mix(.84/(N-1),.34,compact)};
+}
 function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
+// A single reference parabola, uniformly scaled in both dimensions.
+function trackY(x,m){
+ const q=.5+(x-m.W*.5)/Math.max(1,m.trackW);
+ return m.viewportH*(.15+.10*m.compact)-m.topInset+(.62/1.6)*m.trackW*(1-q)*(1-q);
+}
 function anchorAt(i,m,f=focus){
- const t=.5+(i-f)*(mobile()?.34:.84/(N-1));
- const x=m.W*t;
- // The reference's steep lower-left to almost horizontal upper-right arc.
- const q=t, y=m.viewportH*(.15+.62*Math.pow(1-q,2))-m.topInset;
- return {x,y};
+ const effective=f<0?f*mix(.85,.38,m.compact):f;
+ const x=m.W*.5+(i-effective)*m.trackStep;
+ return {x,y:trackY(x,m)};
+}
+function backAt(m){
+ const pad=Math.min(48,m.W*.16);
+ const x=clamp(m.W*.5-1.65*m.trackStep,pad,m.W-pad);
+ return {x,y:trackY(x,m)};
 }
 // Exact projection of the top midpoint for upright sheets; no iterative mesh calculations.
 function topCenter(p,m){const ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,a=m.h*p.scale*Math.sin(rz),b=-m.h*p.scale*Math.cos(rz);const z=p.z-a*Math.sin(ry);const v=project(p.x+a*Math.cos(ry),p.y+b,z,m);return {x:v[0],y:v[1]}}
@@ -130,9 +146,10 @@ function currentDot(u,m){return flight(u,m)}
  // Keep the planes parallel, like the supplied blue bank-card reference.
 // Common track geometry, continuous through the intro-to-gallery handoff.
 function archivePose(i,m,f=focus,amount=1){
- const d=i-f,t=clamp(.5+d*.84/(N-1)),a=anchorAt(i,m,f),size=mobile()?1.04:.96;
- const p={x:a.x,y:a.y+m.h,z:mobile()?-Math.abs(d)*38:55+t*105+lift[i]*.35*amount,ry:mobile()?(-30+clamp(d,-2,2)*11):(-38+t*14),rz:mobile()?-17:-24+t*12,fall:0,opacity:mobile()?clamp(1-(Math.abs(d)-1.35)*.55):clamp(1-(Math.abs(d)-4.1)*.65),scale:size};
- return alignTop(p,m,i,a.x+Math.min(m.w*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48));
+ const d=i-f,a=anchorAt(i,m,f),t=clamp(a.x/m.W),k=m.galleryW/260;
+ const size=m.galleryW/m.w*mix(.96,1.04,m.compact);
+ const p={x:a.x,y:a.y+m.h,z:(55+t*105+lift[i]*.35*amount)*k,ry:-38+t*14,rz:-24+t*12,fall:0,opacity:clamp(1-(Math.abs(d)-mix(4.1,1.35,m.compact))*.65),scale:size};
+ return alignTop(p,m,i,a.x+Math.min(m.galleryW*.16,25),a.y+Math.max(35,88-lift[i]*amount*.48)*k);
 }
 function panelTarget(m){
  const W=m.W,H=m.viewportH;
@@ -205,7 +222,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
   }
   poses[i]=p;cards[i].card.classList.toggle('selected',selected===i&&phase!=='explore');drawSheet(cards[i],p,m,i);
   const base=selected===i&&impactAnchor?impactAnchor:anchorAt(i,m);const a=anchors[i];const ax=base.x,ay=base.y;points.push([ax,ay+5]);
-  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=ax<20||ax>m.W-20?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
+  a.style.left=ax+'px';a.style.top=ay+'px';a.style.visibility=ax<20||ax>m.W-20||ay+m.topInset<45||ay+m.topInset>m.viewportH-24?'hidden':'visible';a.classList.toggle('active',Math.abs(i-focus)<.5);a.classList.toggle('visited',visited.has(i));a.classList.toggle('picked',selected===i);a.disabled=phase!=='explore';
   const u=selected===i&&phase!=='explore'?detailProgress(now):0;
   const flying=selected===i&&impactAnchor&&u>=HIT;
   const dot=flying?currentDot(u,m):null;
@@ -218,8 +235,16 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
 
  }
  opticalRender(m);
- svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);const a0=phase==='explore'&&focus<-.965?anchorAt(-1,m,focus+1.65):anchorAt(0,m),a1=anchorAt(N-1,m),midX=(a0.x+a1.x)/2,midY=(a0.y+a1.y)/2-m.viewportH*.62*Math.pow((a1.x-a0.x)/m.W,2)/2;path.setAttribute('d', 'M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
- const back=$('fold'),ba=anchorAt(-1,m,focus+1.65),br=root.getBoundingClientRect();back.hidden=phase!=='explore'||focus>-.965||target>-.965;back.style.left=(br.left+ba.x)+'px';back.style.top=(br.top+ba.y+5)+'px';const tangent=Math.atan2(midY-a0.y,midX-a0.x)*180/Math.PI;back.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
+ svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
+ const atStart=phase==='explore'&&focus<-.965&&target<-.965;
+ const ba=backAt(m),a0=atStart?ba:anchorAt(0,m),a1=anchorAt(N-1,m);
+ // Exact quadratic between the same track coordinates used by the anchors.
+ const midX=(a0.x+a1.x)/2,midY=2*trackY(midX,m)-(a0.y+a1.y)/2;
+ path.setAttribute('d','M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
+ const back=$('fold'),br=root.getBoundingClientRect();
+ back.hidden=!atStart;back.style.left=(br.left+ba.x)+'px';back.style.top=(br.top+ba.y+5)+'px';
+ const tangent=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2)*180/Math.PI;
+ back.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase))renderPanel(m,detailProgress(now));
  if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');setPhase('explore')}
