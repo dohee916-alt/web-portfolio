@@ -185,7 +185,7 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=meas
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+dt/3);unfoldTarget=1}
-  else if(held()){unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*24));if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
+  else if(held()){const diff=unfoldTarget-unfold;const maxStep=dt*(touchHold?.10:.20);unfold+=clamp(diff,-maxStep,maxStep);if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
   else if(autoUnfold){const speed=(mobile()?1/6.8:1/3)+releaseBoost;unfold=Math.min(1,unfold+dt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
   if(!returning&&!launchLocked&&unfold>=DOWN_END/LAUNCH_END-.0001){launchLocked=true;clearIntroControl();unfoldTarget=1;drag=null;scene.classList.remove('dragging')}
  }
@@ -353,7 +353,7 @@ let wheelAxis=null,returning=false,launchLocked=false;
 let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
 function held(){return !launchLocked&&(hoverHold||touchHold)}
 function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
-function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=mobile()?.12:.25}}
+function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=mobile()?0:.25}}
 function clearIntroControl(){hoverArmed=false;hoverHold=false;touchHold=false;releaseBoost=0;}
 scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
@@ -437,9 +437,9 @@ window.addEventListener('touchmove',e=>{
  if(launchLocked||returning)return;
  const dy=t.clientY-introTouch.y;introTouch.y=t.clientY;introTouch.travel+=dy;
  // A first tap starts playback; dragging that same contact also grabs the sheet.
- if(!touchHold){if(Math.abs(introTouch.travel)<5)return;touchHold=true;pauseIntro()}
- const range=Math.max(100,measure().viewportH*.42);
- unfoldTarget=clamp(unfoldTarget-dy/range,0,1);
+ if(!touchHold){if(Math.abs(introTouch.travel)<5)return;touchHold=true;pauseIntro();return}
+ const range=Math.max(600,measure().viewportH*2.0);
+ unfoldTarget=clamp(unfoldTarget-dy/range,Math.max(0,unfold-.025),Math.min(DOWN_END/LAUNCH_END,unfold+.025));
 },{passive:false});
 function finishIntroTouch(e){
  if(!introTouch)return;
