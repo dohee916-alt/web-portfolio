@@ -201,3 +201,8 @@ header #fold.mobile-fold:active,header #fold.mobile-fold:hover{background:none;c
 /* Hide project count on all viewport sizes; leave navigation arrows available. */
 #counter{display:none!important}
 @media(pointer:coarse){#nav:not([hidden]){bottom:calc(env(safe-area-inset-bottom,0px) + 64px)}}
+
+/* Secondary curve-end back control on touch devices. */
+header #foldEdge{position:fixed;transform:translate(-50%,-50%);width:64px;height:64px;display:grid;place-items:center;padding:0;border:0;background:transparent;border-radius:0;z-index:1001;touch-action:manipulation;pointer-events:auto}
+header #foldEdge[hidden]{display:none!important}
+header #foldEdge svg{display:block;width:19px;height:19px;transform:rotate(var(--back-angle,0deg));stroke:#86aabd;stroke-width:2.1;overflow:visible}
