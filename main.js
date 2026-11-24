@@ -252,6 +252,13 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
 
  }
  opticalRender(m);
+ const growing=$('stillGrowing');
+ if(phase==='intro'){
+  const vertices=silhouettes.flatMap(s=>s.poly);
+  const top=Math.min(...vertices.map(v=>v[1])),left=Math.min(...vertices.map(v=>v[0])),right=Math.max(...vertices.map(v=>v[0]));
+  growing.style.left=((left+right)/2)+'px';
+  growing.style.top=(top+m.topInset-Math.max(14,Math.min(24,m.W*.018)))+'px';
+ }
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
  const touchBack=touchLayout(),atStart=phase==='explore'&&focus<-.965&&target<-.965;
  const ba=backAt(m),a0=atStart?ba:anchorAt(0,m),a1=anchorAt(N-1,m);
