@@ -184,3 +184,8 @@ header #fold svg{width:19px;height:19px;transform:rotate(var(--back-angle,0deg))
 #detail.raon-mode #raonReader[hidden]{display:none!important}
 @media(max-width:600px){#detail.raon-mode{width:96vw!important;top:48%!important}#detail.raon-mode #close{top:-48px}#detail.raon-mode .raon-reader-nav{margin-top:16px;gap:30px}}
 @media(prefers-reduced-motion:reduce){#detail.raon-mode #raonReader,#detail.raon-mode #raonSlide.page-enter{transition:none!important;animation:none!important}}
+
+/* Intro background sampled from the editable Figma intro artwork. */
+#scene::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:#00532d url("./assets/intro-green.svg") center / cover no-repeat;filter:saturate(1.65) hue-rotate(7deg);opacity:0;transition:opacity .6s ease}
+#scene[data-phase="intro"]::before,#scene[data-phase="animation"]::before{opacity:1}
+
