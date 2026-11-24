@@ -315,24 +315,78 @@ async function renderRaonSlide(){
  }catch(err){if(epoch===slideEpoch)detail.classList.remove('slide-loaded')}
  finally{if(epoch===slideEpoch){slideBusy=false;updatePageNav()}}
 }
+// Project a flexible sheet strip by strip, including perspective along its height.
+function turnPaper(canvas,front,back,direction,epoch){
+ const media=$('raonSlide').parentElement,W=media.clientWidth,H=media.clientHeight;
+ const pad=Math.ceil(Math.max(W,H)*.4),dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.ceil((W+2*pad)*dpr);canvas.height=Math.ceil((H+2*pad)*dpr);
+ Object.assign(canvas.style,{left:-pad+'px',top:-pad+'px',width:W+2*pad+'px',height:H+2*pad+'px'});
+ const g=canvas.getContext('2d'),N=100,cam=Math.max(W*2.5,650),sign=direction>0?1:-1;
+ const project=(x,y,z)=>{const k=cam/(cam-z);return [W/2+(x-W/2)*k,H/2+(y-H/2)*k]};
+ function triangle(img,s0,s1,s2,d0,d1,d2){
+  const ax=s1[0]-s0[0],ay=s1[1]-s0[1],bx=s2[0]-s0[0],by=s2[1]-s0[1],det=ax*by-ay*bx;
+  if(Math.abs(det)<1e-9)return;
+  const X=d1[0]-d0[0],Y=d1[1]-d0[1],U=d2[0]-d0[0],V=d2[1]-d0[1];
+  const A=(X*by-U*ay)/det,B=(Y*by-V*ay)/det,C=(U*ax-X*bx)/det,D=(V*ax-Y*bx)/det;
+  g.save();g.beginPath();g.moveTo(...d0);g.lineTo(...d1);g.lineTo(...d2);g.closePath();g.clip();
+  g.transform(A,B,C,D,d0[0]-A*s0[0]-C*s0[1],d0[1]-B*s0[0]-D*s0[1]);g.drawImage(img,0,0);g.restore();
+ }
+ return new Promise(resolve=>{
+  const start=performance.now(),duration=1050;
+  function frameTurn(now){
+   if(epoch!==slideEpoch||phase!=='detail'){resolve(false);return}
+   const t=clamp((now-start)/duration),q=t*t*(3-2*t);
+   g.setTransform(dpr,0,0,dpr,pad*dpr,pad*dpr);g.clearRect(-pad,-pad,W+2*pad,H+2*pad);
+   // Moving bend travels from the free edge toward the hinge.
+   const nodes=[],bend=Math.sin(Math.PI*q),radius=1.15;
+   let x=0,z=0;
+   for(let j=0;j<=N;j++){
+    const u=j/N;
+    if(j){const v=(j-.5)/N,angle=Math.PI*q+bend*radius*(v-.5);x+=Math.cos(angle)*W/N;z+=Math.sin(angle)*W/N;}
+    const drift=-W*.22*q*q,xx=sign>0?x+drift:W-x-drift;
+    const lift=Math.sin(Math.PI*u)*bend*H*.035;
+    nodes.push({u,x:xx,z,top:project(xx,-lift,z),bottom:project(xx,H+lift,z)});
+   }
+   // Paint the turning sheet over the already decoded next page.
+   const strips=Array.from({length:N},(_,j)=>j).sort((a,b)=>nodes[a].z+nodes[a+1].z-nodes[b].z-nodes[b+1].z);
+   g.globalAlpha=1-ease(clamp((t-.85)/.15));
+   for(const j of strips){
+    const a=nodes[j],b=nodes[j+1],face=(b.x-a.x)*sign>=0;
+    const img=front,sw=img.naturalWidth,sh=img.naturalHeight;
+    const u0=(sign>0?a.u:1-a.u)*sw,u1=(sign>0?b.u:1-b.u)*sw;
+    if(face){
+     triangle(img,[u0,0],[u1,0],[u1,sh],a.top,b.top,b.bottom);
+     triangle(img,[u0,0],[u1,sh],[u0,sh],a.top,b.bottom,a.bottom);
+    }else{
+     g.fillStyle='#eee9d9';g.beginPath();g.moveTo(...a.top);g.lineTo(...b.top);g.lineTo(...b.bottom);g.lineTo(...a.bottom);g.closePath();g.fill();
+    }
+    const shade=Math.min(.23,Math.abs(b.z-a.z)/(W/N)*.16);
+    g.fillStyle='rgba(30,42,32,'+shade+')';g.beginPath();g.moveTo(...a.top);g.lineTo(...b.top);g.lineTo(...b.bottom);g.lineTo(...a.bottom);g.closePath();g.fill();
+   }
+   g.globalAlpha=1;
+   if(t<1)requestAnimationFrame(frameTurn);else resolve(true);
+  }
+  requestAnimationFrame(frameTurn);
+ });
+}
 async function moveRaonSlide(direction){
  if(slideBusy||!detail.classList.contains('has-slides')||phase!=='detail')return;
  const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);if(next===raonSlideIndex)return;
  const epoch=slideEpoch;slideBusy=true;updatePageNav();
  let overlay;
  try{
-  const ready=await preparePage(next);
+  const [ready,front]=await Promise.all([preparePage(next),preparePage(raonSlideIndex)]);
   if(epoch!==slideEpoch||phase!=='detail')return;
   const old=$('raonSlide'),media=old.parentElement;
-  overlay=old.cloneNode();overlay.removeAttribute('id');overlay.className='page-turn-copy';overlay.setAttribute('aria-hidden','true');media.append(overlay);
-  old.src=ready.src;await old.decode();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   overlay=document.createElement('canvas');overlay.className='page-turn-mesh';overlay.setAttribute('aria-hidden','true');media.append(overlay);
+   // Keep the old page in place until the first canvas frame is ready.
+   const turn=turnPaper(overlay,front,ready,direction,epoch);
+   await new Promise(requestAnimationFrame);
+   old.src=ready.src;await old.decode();
+   if(!await turn)return;
+  }else{old.src=ready.src;await old.decode()}
   if(epoch!==slideEpoch||phase!=='detail')return;
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const side=direction>0?-1:1;
-  overlay.style.transformOrigin=direction>0?'left center':'right center';
-  const animation=overlay.animate([{transform:'perspective(1100px) rotateY(0deg) translateX(0)',opacity:1},{transform:'perspective(1100px) rotateY('+side*38+'deg) translateX('+side*8+'%)',opacity:1,offset:.55},{transform:'perspective(1100px) rotateY('+side*82+'deg) translateX('+side*18+'%)',opacity:0}],{duration:reduced?0:460,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
-  await animation.finished;
-  if(epoch!==slideEpoch)return;
   raonSlideIndex=next;old.alt='라온이음 포트폴리오 '+(next+1)+' / 6 페이지';warmPages(next);
  }catch(err){}finally{overlay?.remove();if(epoch===slideEpoch){slideBusy=false;updatePageNav()}}
 }
