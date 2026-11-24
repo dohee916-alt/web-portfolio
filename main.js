@@ -27,7 +27,7 @@ items.forEach((p,i)=>{
    gallery (damped continuous navigation), radial-gallery (spatial picking).
    Original implementation; no external example code copied. */
 const surface=document.createElement('canvas');surface.id='optical-scene';surface.setAttribute('aria-hidden','true');root.prepend(surface);
-const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.48;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
+const ctx=surface.getContext('2d');let silhouettes=[],velocity=0,lastDragX=0,lastDragT=0,impactPose=null,impactAnchor=null;const OPEN_MS=1320,CLOSE_MS=780;const HIT=.19,PUSH=.57;let closeFrom=1,wheelAt=0,scrollSpeed=0,lastWheel=0,unfold=0,unfoldTarget=0,returnFocus=0,autoUnfold=false,gate=false;const RANGE=8;
 // A fixed, very fine fiber pattern reads as paper without shimmering in motion.
 const grainTile=document.createElement('canvas');grainTile.width=grainTile.height=96;
 const grainCtx=grainTile.getContext('2d');let grainSeed=17;
@@ -138,12 +138,12 @@ function topCenter(p,m){const ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,a=m.h*p.sc
 function alignTop(p,m,i,x,y){const e=topCenter(p,m),ry=p.ry*Math.PI/180,rz=p.rz*Math.PI/180,z=p.z-m.h*p.scale*Math.sin(rz)*Math.sin(ry),camera=Math.max(780,m.W*1.05),k=camera/Math.max(180,camera-z);p.x+=(x-e.x)/k;p.y+=(y-e.y)/k;return p}
 // A single impact transfers velocity to the circle. It flies independently.
 function flight(u,m){
- const t=clamp((u-HIT)/(PUSH-HIT)),s=1-Math.pow(1-t,3);
+ const t=clamp((u-HIT)/(PUSH-HIT)),s=t*t*(3-2*t);
  const y0=impactAnchor.y+5, room=y0+m.topInset-38;
- const rise=Math.max(0,Math.min(m.viewportH*.19,155,room));
- const dx=clamp(m.W*.065,24,90);
+ const rise=Math.max(0,Math.min(m.viewportH*.125,105,room));
+ const dx=clamp(m.W*.045,16,60);
  const sign=impactAnchor.x>m.W*.80?-1:1;
- return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s+Math.sin(Math.PI*t)*-Math.min(12,rise*.08)};
+ return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s};
 }
 function currentDot(u,m){return flight(u,m)}
 // Codrops 3DStackMotion: coherent group orientation and successive depth offsets.
@@ -236,7 +236,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   a.classList.toggle('absorbed',selected===i&&u>=PUSH);
   a.style.setProperty('--bump',dot?(dot.y-(ay+5))+'px':'0px');
   a.style.setProperty('--fly-x',dot?(dot.x-ax)+'px':'0px');
-  const squash=flying?1+.32*Math.sin(Math.PI*clamp((u-HIT)/.09)):1;
+  const squash=flying?1+.06*Math.sin(Math.PI*clamp((u-HIT)/.12)):1;
   a.style.setProperty('--dot-stretch',String(squash));
   if(selected===i&&u>=HIT&&u<PUSH){a.style.visibility='visible'}
 
