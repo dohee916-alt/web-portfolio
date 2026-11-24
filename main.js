@@ -61,11 +61,6 @@ function opticalRender(m){
    g.addColorStop(0,'rgba(253,252,245,.52)');g.addColorStop(.28,'rgba(247,248,240,.38)');g.addColorStop(.72,'rgba(250,250,242,.42)');g.addColorStop(1,'rgba(238,243,234,.47)');
    ctx.fillStyle=g;ctx.shadowColor='rgba(49,65,60,.09)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
    ctx.save();shape(poly);ctx.clip();ctx.globalAlpha=p.opacity*.4;ctx.fillStyle=paperGrain;ctx.fillRect(0,-m.topInset,m.W,m.viewportH);ctx.restore();
-   const bandRow=Math.max(0,Math.round((L.length-1)*.915));
-   const bandL=L.length===2?[mix(L[0][0],L[1][0],.915),mix(L[0][1],L[1][1],.915)]:L[bandRow];
-   const bandR=R.length===2?[mix(R[0][0],R[1][0],.915),mix(R[0][1],R[1][1],.915)]:R[bandRow];
-   ctx.beginPath();ctx.moveTo(...L[L.length-1]);ctx.lineTo(...R[R.length-1]);ctx.lineTo(...bandR);ctx.lineTo(...bandL);ctx.closePath();ctx.fillStyle='rgba(255,255,248,.09)';ctx.fill();
-   ctx.beginPath();ctx.moveTo(...bandL);ctx.lineTo(...bandR);ctx.strokeStyle='rgba(119,128,112,.09)';ctx.lineWidth=.6;ctx.stroke();
    ctx.strokeStyle='rgba(247,248,239,.64)';ctx.lineWidth=.8;shape(poly);ctx.stroke();
    ctx.beginPath();if(R.length===2){const a=R[0],b=R[1];ctx.moveTo(mix(a[0],b[0],.035),mix(a[1],b[1],.035));ctx.lineTo(mix(a[0],b[0],.965),mix(a[1],b[1],.965))}else R.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle='rgba(102,117,104,.18)';ctx.lineWidth=.7;ctx.stroke();ctx.restore()
  }
