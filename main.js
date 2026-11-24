@@ -175,7 +175,7 @@ function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';
 
 }
 const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
-function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
+function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt&&now-wheelAt>100){target=clamp(Math.round(focus),-1,N-1);wheelAt=0;scrollSpeed=0;wheelDirection=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?40:18)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
   else if(launchLocked){unfold=Math.min(1,unfold+playDt/3);unfoldTarget=1}
@@ -358,7 +358,7 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])foldButton.
 
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-let wheelAxis=null,returning=false,launchLocked=false;
+let wheelAxis=null,wheelDirection=0,returning=false,launchLocked=false;
 let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
 function held(){return !launchLocked&&(hoverHold||touchHold)}
 function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
@@ -372,9 +372,16 @@ scene.addEventListener('wheel',e=>{
  const gallery=phase==='explore';
  let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):e.deltaY;
  if(e.deltaMode===1)delta*=16;if(e.deltaMode===2)delta*=innerHeight;
- const units=clamp(delta/(gallery?clamp(measure().trackStep*.65,24,105):105),-1.5,1.5);
- if(gallery){scrollSpeed=mix(scrollSpeed,units*1000/Math.max(16,gap),.35);wheelAt=now}
- navigate(units,gallery?'x':'y');
+ if(gallery){
+  if(!delta)return;
+  const direction=Math.sign(delta);
+  if(!wheelAt||direction!==wheelDirection){target=focus;scrollSpeed=0;velocity=0}
+  wheelDirection=direction;
+  // Small trackpad inputs remain precise; strong inputs can still traverse multiple cards.
+  const magnitude=Math.abs(delta),gain=mix(.68,1.12,ease(clamp((magnitude-12)/100)));
+  const units=direction*Math.min(1,magnitude/100*gain);
+  wheelAt=now;target=clamp(focus+clamp(target-focus+units,-1.15,1.15),-1,N-1);
+ }else navigate(clamp(delta/105,-1.5,1.5),'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
  // Touch gestures during the intro are owned exclusively by the touch handlers below.
