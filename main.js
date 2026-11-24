@@ -130,11 +130,11 @@ function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
 }
-const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35;
+const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-2)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.22,LAUNCH_END=LAUNCH_START+1.35,AUTO_DURATION=reduced?.45:Math.max(3.2,LAUNCH_END*1.12);
 function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;const m=measure();if(phase==='explore'&&!drag&&mobile()&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*10);if(Math.abs(velocity)<.1){velocity=0;target=Math.round(target)}}if(phase==='explore'&&!mobile()&&wheelAt&&now-wheelAt>125){const remaining=target-focus;target=clamp(Math.round(target+(Math.abs(remaining)>.03?Math.sign(remaining)*Math.min(.28,Math.abs(scrollSpeed)*.045):0)),-1,N-1);wheelAt=0;scrollSpeed=0}focus=mix(focus,target,1-Math.exp(-dt*(drag?35: wheelAt?19:12)));if(Math.abs(focus-target)<.001)focus=target;
- if(phase==='animation'){if(returning)unfold=Math.max(0,unfold-dt/LAUNCH_END);else if(launchLocked){unfold=Math.min(1,unfold+dt/LAUNCH_END)}else{unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*(drag?32:18)));const boundary=LAUNCH_START/LAUNCH_END;if(unfoldTarget>=boundary&&unfold>=boundary-.003){unfold=boundary;unfoldTarget=1;launchLocked=true;}}if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget;}
- if(phase==='animation'&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
- if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;launchLocked=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+ if(phase==='animation'){if(returning)unfold=Math.max(0,unfold-dt/LAUNCH_END);else if(autoUnfold&&!hoverScrubbing&&!holdScrubbing){unfold=Math.min(1,unfold+dt*autoRate/AUTO_DURATION);unfoldTarget=unfold}else{unfold=mix(unfold,unfoldTarget,1-Math.exp(-dt*32));if(Math.abs(unfoldTarget-unfold)<.001)unfold=unfoldTarget}}
+ if(phase==='animation'&&unfold===0&&unfoldTarget===0&&!hoverScrubbing&&!holdScrubbing){returning=false;autoUnfold=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
+ if(phase==='animation'&&unfold===1&&unfoldTarget===1){autoUnfold=false;hoverScrubbing=false;holdScrubbing=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||phase==='opening'||phase==='detail'||phase==='closing';
  const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
  for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=phase==='animation'?want:mix(lift[i],want,1-Math.exp(-dt*14))}
@@ -194,12 +194,12 @@ function enterTransition(){
   returnFocus=focus;target=focus;velocity=0;scrollSpeed=0;wheelAt=0;
   unfold=unfoldTarget=1;gate=false;
  }
- if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
+ if(phase==='intro'||phase==='explore'){autoUnfold=phase==='intro';autoRate=1;hoverScrubbing=holdScrubbing=false;setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
  scene.classList.remove('intro-card-hover');
 }
-function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus;unfoldTarget=Math.max(unfoldTarget,.025)}
+function start(){if(phase!=='intro')return;enterTransition();target=focus=returnFocus}
 function navigate(delta,axis='y'){
- if(returning||launchLocked)return;
+ if(returning)return;
  if(!delta||!['intro','animation','explore'].includes(phase))return;
  if(axis==='x'){
   if(phase==='explore')target=clamp(target+delta,-1,N-1);
@@ -207,9 +207,9 @@ function navigate(delta,axis='y'){
  }
  if(phase==='explore'){if(delta>=0)return;enterTransition()}
  if(phase==='intro'){if(delta<0)return;enterTransition();target=focus=returnFocus}
- if(phase==='animation')unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,LAUNCH_START/LAUNCH_END);
+ if(phase==='animation'){unfold=unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72));if(!autoUnfold&&unfold>=LAUNCH_START/LAUNCH_END)autoUnfold=true}
 }
-function reset(){gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function reset(){gate=false;autoUnfold=false;hoverScrubbing=holdScrubbing=false;clearTimeout(holdTimer);unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'위로 드래그하여 레이어를 펼치세요.':'스크롤하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
 const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
 let raonSlideIndex=0,raonTouchStart=null;
@@ -266,11 +266,13 @@ function close(){
 $('close').onclick=close;$('fold').onclick=()=>{if(phase==='explore'){enterTransition();unfoldTarget=0;gate=false;returning=true;}};
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
-let wheelAxis=null,returning=false,launchLocked=false;
+let wheelAxis=null,returning=false,hoverScrubbing=false,holdScrubbing=false,holdTimer=0,hoverX=null,hoverY=null,autoRate=1;
+function pauseUnfold(){autoUnfold=false;unfoldTarget=unfold}
+function resumeUnfold(){if(phase==='animation'&&!returning&&!hoverScrubbing&&!holdScrubbing){autoRate=1.45;autoUnfold=true}}
 scene.addEventListener('wheel',e=>{
  if(!['intro','animation','explore'].includes(phase))return;e.preventDefault();
  const now=performance.now(),gap=now-lastWheel;lastWheel=now;
- if(returning||launchLocked)return;
+ if(returning)return;
  if(phase==='explore'&&gate){if(gap<220)return;gate=false;}
  const gallery=phase==='explore';
  let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):-e.deltaY;
@@ -282,19 +284,36 @@ scene.addEventListener('wheel',e=>{
 scene.addEventListener('pointerdown',e=>{
  if(returning||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
+ if(phase==='animation'&&pick(e)>=0){
+  if(e.pointerType==='mouse'){holdScrubbing=true;pauseUnfold()}
+  else holdTimer=setTimeout(()=>{if(drag?.id===e.pointerId&&phase==='animation'){holdScrubbing=true;pauseUnfold()}},180);
+ }
 });
 window.addEventListener('pointermove',e=>{
  if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
  if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true;scene.classList.add('dragging')}
- if(!drag.axis||launchLocked||returning)return;
+ if(!drag.axis||returning)return;
  const now=performance.now(),m=measure();
- if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
+ if(phase==='animation'&&drag.axis==='y'){clearTimeout(holdTimer);if(!holdScrubbing){holdScrubbing=true;pauseUnfold()}unfoldTarget=clamp(unfoldTarget-(e.clientY-drag.lastY)/(m.viewportH*.65))}
+ else if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
  if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/(m.W*.25);navigate(delta,'x');velocity=clamp(mix(velocity,delta*1000/Math.max(8,now-lastDragT),.45),-5,5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
-function endDrag(){if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),-1,N-1)}velocity=0}drag=null;scene.classList.remove('dragging')}
-scene.addEventListener('pointermove',e=>{if(phase==='intro'&&e.pointerType==='mouse')scene.classList.toggle('intro-card-hover',pick(e)>=0)});
-scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
+function endDrag(){clearTimeout(holdTimer);if(!drag)return;if(drag.moved){blockClick=performance.now()+350;if(drag.axis==='x'&&phase==='explore'){if(performance.now()-lastDragT>90)velocity=0;target=clamp(Math.round(target+clamp(velocity*.12,-1,1)),-1,N-1)}velocity=0}drag=null;holdScrubbing=false;resumeUnfold();scene.classList.remove('dragging')}
+scene.addEventListener('pointermove',e=>{
+ if(e.pointerType!=='mouse')return;
+ if(phase==='intro'){scene.classList.toggle('intro-card-hover',pick(e)>=0);hoverX=e.clientX;hoverY=e.clientY;return}
+ if(phase!=='animation'||returning||drag)return;
+ if(hoverX===null){hoverX=e.clientX;hoverY=e.clientY;return}
+ const overCard=pick(e)>=0;
+ if(hoverScrubbing&&!overCard){hoverScrubbing=false;resumeUnfold()}
+ else if(overCard){
+  if(!hoverScrubbing&&hoverX!==null&&Math.hypot(e.clientX-hoverX,e.clientY-hoverY)>5){hoverScrubbing=true;pauseUnfold()}
+  if(hoverScrubbing)unfoldTarget=clamp(unfoldTarget+(hoverY-e.clientY)/(measure().viewportH*.65));
+ }
+ if(hoverScrubbing||!overCard){hoverX=e.clientX;hoverY=e.clientY}
+});
+scene.addEventListener('pointerleave',()=>{scene.classList.remove('intro-card-hover');hoverScrubbing=false;hoverX=hoverY=null;resumeUnfold()});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(detail.classList.contains('raon-mode')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 reset();requestAnimationFrame(frame);
