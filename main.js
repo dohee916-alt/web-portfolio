@@ -1,5 +1,8 @@
+if(!(window.PROJECTS||[]).some(p=>p&&p.enabled!==false)){
+ const label=document.getElementById('stillGrowing');if(label){label.style.opacity='1';label.style.top='50%';label.style.transform='translate(-50%,-50%)'}
+}else{
 
-const $=id=>document.getElementById(id),scene=$('scene'),root=$('layers'),items=window.PROJECTS,dialog=$('detail');
+const $=id=>document.getElementById(id),scene=$('scene'),root=$('layers'),items=(window.PROJECTS||[]).filter(p=>p&&p.enabled!==false),dialog=$('detail');
 const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a,b,t)=>a+(b-a)*t, ease=t=>{t=clamp(t);return t*t*(3-2*t)}, reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
@@ -112,9 +115,9 @@ function measure(){
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=mix(Math.min(W*.19,260),Math.min(W*.43,V*.26,260),compact);
  return {W,H:r.height,w,h:w*(9.5/7),topInset:r.top-s.top,viewportH:V,compact,galleryW,
-  trackW:Math.min(W,V*1.6),trackStep:mix(Math.min(W*.84/(N-1),galleryW*.70),galleryW*.55,compact)};
+  trackW:Math.min(W,V*1.6),trackStep:mix(Math.min(W*.84/Math.max(1,Math.min(N-1,7)),galleryW*.70),galleryW*.55,compact)};
 }
-function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*12,ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
+function introPose(i,m){return {x:m.W*.5,y:m.H*.8,z:-i*Math.min(12,84/Math.max(1,N-1)),ry:0,rz:0,fall:0,opacity:1,scale:1.15}}
 // Reference composition: ascending convex arc, cards hanging below their anchors.
 // A single continuous arc, shared by the entire stack and its timeline.
 // The stack opens onto a shallow continuous curved track.
@@ -179,7 +182,7 @@ function between(a,b,t){const o={};for(const k in a)o[k]=mix(a[k],b[k],t);return
 function drawSheet(obj,p,m,i){const {card,strips}=obj;card.style.width=m.w+'px';card.style.height=m.h+'px';card.style.transform='translate3d('+ (p.x-m.w/2)+'px,'+(p.y-m.h)+'px,'+p.z+'px) rotateY('+p.ry+'deg) rotateZ('+p.rz+'deg) scale('+p.scale+')';card.style.opacity=p.opacity;card.style.zIndex=String(Math.round(100+p.z+(selected===i&&phase!=='explore'?500:0)));
 
 }
-const FALL_STAGGER=.12,FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
+const FALL_STAGGER=Math.min(.12,.84/Math.max(1,N-1)),FALL_DURATION=.68,DOWN_END=(N-1)*FALL_STAGGER+FALL_DURATION,LAUNCH_START=DOWN_END+.10,LAUNCH_END=LAUNCH_START+1.35;
 function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapsed,.05),playDt=Math.min(elapsed,.15);last=now;const m=measure();if(phase==='explore'&&!drag&&Math.abs(velocity)>.015){target=clamp(target+velocity*dt,-1,N-1);velocity*=Math.exp(-dt*4.8);if(Math.abs(velocity)<.18||(target===-1&&velocity<0)||(target===N-1&&velocity>0)){velocity=0;target=Math.round(target)}}if(phase==='explore'&&wheelAt){
  const idle=now-wheelAt;
  if(idle>150){
@@ -208,7 +211,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   if(phase==='animation'){
    if(i<N){
     const fall=ease((time-i*FALL_STAGGER)/FALL_DURATION);
-    p.fall=fall;p.y+=p.fall*(N-1-i)*2;p.z+=p.fall*(N-1-i)*3;
+    p.fall=fall;p.y+=p.fall*(N-1-i)*Math.min(2,14/Math.max(1,N-1));p.z+=p.fall*(N-1-i)*Math.min(3,21/Math.max(1,N-1));
    }
    if(time>=LAUNCH_START){const t=clamp((time-LAUNCH_START)/1.35),q=ease(t);const dest=archivePose(i,m,focus,1);p=between(p,dest,q);p.y-=Math.sin(Math.PI*t)*m.H*.24;p.z+=Math.sin(Math.PI*t)*45}
   }else if(archive){
@@ -304,23 +307,25 @@ function navigate(delta,axis='y'){
 }
 function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
-const RAON_SLIDES=Array.from({length:6},(_,i)=>'./assets/raon/'+(i+1)+'.jpg');
+let projectPages=[],readerTitle='';
+function pagesFor(p){return Array.isArray(p.pages)?p.pages.filter(v=>typeof v==='string'&&v.trim()).map(v=>v.trim()):[]}
 let raonSlideIndex=0,raonTouchStart=null,slideBusy=false,slideEpoch=0;
 const pageCache=new Map();
-function preparePage(i){
- if(!pageCache.has(i)){
-  const img=new Image();img.src=RAON_SLIDES[i];
-  const ready=img.decode().then(()=>img).catch(err=>{pageCache.delete(i);throw err});
-  pageCache.set(i,ready);
+function preparePage(i,pages=projectPages){
+ const url=pages[i];if(!url)return Promise.reject(new Error('Missing page'));
+ if(!pageCache.has(url)){
+  const img=new Image();img.src=url;
+  const ready=img.decode().then(()=>img).catch(err=>{pageCache.delete(url);throw err});
+  pageCache.set(url,ready);
  }
- return pageCache.get(i);
+ return pageCache.get(url);
 }
 function updatePageNav(){
- $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / 06';
+ $('raonCount').textContent=String(raonSlideIndex+1).padStart(2,'0')+' / '+String(projectPages.length).padStart(2,'0');
  $('raonPrev').disabled=slideBusy||raonSlideIndex===0;
- $('raonNext').disabled=slideBusy||raonSlideIndex===RAON_SLIDES.length-1;
+ $('raonNext').disabled=slideBusy||raonSlideIndex===projectPages.length-1;
 }
-function warmPages(i){for(const j of [i-1,i+1])if(j>=0&&j<RAON_SLIDES.length)preparePage(j).catch(()=>{})}
+function warmPages(i){for(const j of [i-1,i+1])if(j>=0&&j<projectPages.length)preparePage(j).catch(()=>{})}
 async function renderRaonSlide(){
  const epoch=++slideEpoch;slideBusy=true;updatePageNav();
  const media=$('raonReader').querySelector('.raon-reader-media');media.querySelectorAll('.page-turn-copy').forEach(el=>el.remove());
@@ -328,7 +333,7 @@ async function renderRaonSlide(){
  try{
   const ready=await preparePage(raonSlideIndex);
   if(epoch!==slideEpoch||!detail.classList.contains('has-slides'))return;
-  image.src=ready.src;image.alt='라온이음 포트폴리오 '+(raonSlideIndex+1)+' / 6 페이지';
+  image.src=ready.src;image.alt=readerTitle+' 포트폴리오 '+(raonSlideIndex+1)+' / '+projectPages.length+' 페이지';
   await image.decode();
   if(epoch!==slideEpoch||!detail.classList.contains('has-slides'))return;
   image.style.visibility='visible';detail.classList.add('slide-loaded');warmPages(raonSlideIndex);
@@ -392,7 +397,7 @@ function turnPaper(canvas,front,back,direction,epoch){
 }
 async function moveRaonSlide(direction){
  if(slideBusy||!detail.classList.contains('has-slides')||phase!=='detail')return;
- const next=clamp(raonSlideIndex+direction,0,RAON_SLIDES.length-1);if(next===raonSlideIndex)return;
+ const next=clamp(raonSlideIndex+direction,0,projectPages.length-1);if(next===raonSlideIndex)return;
  const epoch=slideEpoch;slideBusy=true;updatePageNav();
  let overlay;
  try{
@@ -408,7 +413,7 @@ async function moveRaonSlide(direction){
    if(direction<0){old.src=ready.src;await old.decode()}
   }else{old.src=ready.src;await old.decode()}
   if(epoch!==slideEpoch||phase!=='detail')return;
-  raonSlideIndex=next;old.alt='라온이음 포트폴리오 '+(next+1)+' / 6 페이지';warmPages(next);
+  raonSlideIndex=next;old.alt=readerTitle+' 포트폴리오 '+(next+1)+' / '+projectPages.length+' 페이지';warmPages(next);
  }catch(err){}finally{overlay?.remove();if(epoch===slideEpoch){slideBusy=false;updatePageNav()}}
 }
 $('raonPrev').addEventListener('click',()=>moveRaonSlide(-1));
@@ -425,22 +430,23 @@ $('raonReader').addEventListener('pointerup',e=>{
 });
 let openingRequest=0;
 async function open(i){
- if(phase!=='explore')return;
- const request=++openingRequest;
- if(items[i].title==='라온이음'){
-  try{const ready=await preparePage(0);if(request!==openingRequest||phase!=='explore')return;const img=$('raonSlide');img.src=ready.src;await img.decode();}catch(err){}
+ if(phase!=='explore'||!items[i])return;
+ const request=++openingRequest,p=items[i],pages=pagesFor(p),hasPages=pages.length>0;
+ let loaded=false;
+ if(hasPages){
+  try{const ready=await preparePage(0,pages);if(request!==openingRequest||phase!=='explore')return;const img=$('raonSlide');img.src=ready.src;await img.decode();loaded=true;}catch(err){}
   if(request!==openingRequest||phase!=='explore')return;
  }
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  impactPose={...poses[i]};impactAnchor=anchorAt(i,measure());
- const p=items[i],isRaon=p.title==='라온이음';++slideEpoch;slideBusy=false;
- detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',isRaon);
- $('raonReader').hidden=!isRaon;detail.classList.remove('slide-loaded');
- $('category').textContent=p.category;
+ ++slideEpoch;slideBusy=false;projectPages=pages;readerTitle=p.title;
+ detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);
+ const reader=$('raonReader');reader.hidden=!hasPages;reader.setAttribute('aria-label',p.title+' 포트폴리오 '+pages.length+'페이지');detail.classList.remove('slide-loaded');
+ $('category').textContent=p.category||'';
  $('projectTitle').textContent=p.title;
- $('projectDesc').textContent=p.description;
+ $('projectDesc').textContent=p.description||'';
  const ph=$('placeholder');ph.replaceChildren();
- if(isRaon){raonSlideIndex=0;const img=$('raonSlide');if(img.complete&&img.naturalWidth>0&&img.src.endsWith('/assets/raon/1.jpg')){img.style.visibility='visible';detail.classList.add('slide-loaded');updatePageNav();warmPages(0)}else renderRaonSlide();}
+ if(hasPages){raonSlideIndex=0;const img=$('raonSlide');if(loaded){img.alt=readerTitle+' 포트폴리오 1 / '+pages.length+' 페이지';img.style.visibility='visible';detail.classList.add('slide-loaded');updatePageNav();warmPages(0)}else renderRaonSlide();}
  else if(p.url){const link=document.createElement('a');link.href=p.url;link.textContent='View project';ph.append(link);}
  openedAt=performance.now();setPhase('opening');
 }
@@ -605,3 +611,5 @@ reset();requestAnimationFrame(frame);
 // Temporary material comparison controls; no changes to project content.
 const paperStudy=document.getElementById('paperStudy');
 if(paperStudy){const setPaper=value=>{detail.dataset.paper=value;paperStudy.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.paper===value)))};paperStudy.addEventListener('click',e=>{const b=e.target.closest('button[data-paper]');if(b)setPaper(b.dataset.paper)});setPaper('tracing')}
+
+}
