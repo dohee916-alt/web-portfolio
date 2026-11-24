@@ -340,9 +340,10 @@ function close(){
 }
 $('close').onclick=close;function foldBack(){if(phase==='explore'){enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;gate=false;returning=true;}}$('fold').onclick=foldBack;$('foldEdge').onclick=foldBack;
 let foldTouch=null;const foldButton=$('fold');
+foldButton.addEventListener('contextmenu',e=>{if(touchLayout())e.preventDefault()});
 foldButton.addEventListener('pointerdown',e=>{
  if(!touchLayout()||phase!=='explore'||e.isPrimary===false)return;
- foldTouch={id:e.pointerId,y:e.clientY,dy:0};foldButton.setPointerCapture(e.pointerId);
+ e.preventDefault();foldTouch={id:e.pointerId,y:e.clientY,dy:0};foldButton.setPointerCapture(e.pointerId);
  foldButton.classList.add('fold-grabbed');
 });
 foldButton.addEventListener('pointermove',e=>{
