@@ -18,23 +18,40 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   if(source&&source.width>0&&source.height>0&&dest.width>0){
    const sx=source.left+source.width/2,sy=source.top+source.height/2,dx=dest.left+dest.width/2,dy=dest.top+dest.height/2;
    const x=sx-dx,y=sy-dy,scale=Math.max(.012,source.width/dest.width);
-   // The left-hand leaf silhouette takes off from its measured position.
-   frames=[
-    {transform:'translate('+x+'px,'+y+'px) rotate(43deg) scale('+scale+')',offset:0},
-    {transform:'translate('+(x*.91)+'px,'+(y-26)+'px) rotate(65deg) scale('+(scale*1.3)+')',offset:.17},
-    {transform:'translate('+(x*.56-12)+'px,'+(y*.62+32)+'px) rotate(14deg) scale(.33)',offset:.51},
-    {transform:'translate('+(x*.12)+'px,'+(y*.1-9)+'px) rotate(-5deg) scale(.88)',offset:.83},
-    {...final,offset:1}
-   ];duration=1250;leaf.classList.add('detached');
+   // Smooth cubic flight, independently damped flutter and depth.
+   // Sample one continuous trajectory rather than interpolating a few angular poses.
+   const bezier=(a,b,c,d,t)=>{const q=1-t;return q*q*q*a+3*q*q*t*b+3*q*t*t*c+t*t*t*d};
+   const smooth=t=>t*t*(3-2*t);
+   const outline=surface.querySelector('#leafOutline');
+   const bend=(t)=>{
+    const wave=Math.sin(t*Math.PI*3.2)*Math.sin(Math.PI*t)*24;
+    return 'M8 246 C95 '+(40+wave)+' 312 '+(5-wave*.7)+' 532 52 C450 '+(232-wave*.55)+' 235 '+(311+wave*.4)+' 8 246Z';
+   };
+   const steps=80;frames=[];
+   for(let i=0;i<=steps;i++){
+    const t=i/steps,q=smooth(t),envelope=Math.sin(Math.PI*t);
+    const px=bezier(x,x+Math.min(28,Math.abs(x)*.16),-Math.abs(x)*.15,0,q);
+    const py=bezier(y,y-95,-55,0,q);
+    const swell=scale+(1-scale)*smooth(Math.pow(t,1.18));
+    const tilt=43*(1-q)+Math.sin(t*Math.PI*3.4)*envelope*21;
+    const pitch=Math.sin(t*Math.PI*3.2)*envelope*38;
+    const yaw=Math.sin(t*Math.PI*2.4)*envelope*23;
+    frames.push({offset:t,transform:'translate('+px+'px,'+py+'px) perspective(950px) rotate('+tilt+'deg) rotateX('+pitch+'deg) rotateY('+yaw+'deg) scale('+swell+')',opacity:1});
+   }
+   duration=1650;leaf.classList.add('detached');
+   const begin=performance.now();
+   const flex=now=>{if(!dialog.open||!flight)return;const t=Math.min(1,(now-begin)/duration);outline?.setAttribute('d',bend(t));if(t<1)requestAnimationFrame(flex);};
+   requestAnimationFrame(flex);
   }else{
    frames=[{transform:'translateY(12px) rotate(-5deg) scale(.90)',opacity:0},final];duration=420;
   }
-  flight=surface.animate(frames,{duration,easing:'cubic-bezier(.25,.65,.3,1)',fill:'both'});
-  flight.finished.then(()=>{dialog.classList.add('leaf-arrived');flight?.cancel();flight=null}).catch(()=>{});
+  flight=surface.animate(frames,{duration,easing:'linear',fill:'both'});
+  const active=flight;
+  active.finished.then(()=>{if(flight!==active||!dialog.open)return;dialog.classList.add('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');active.cancel();flight=null}).catch(()=>{});
  }
  openButton.addEventListener('click',()=>showContact());
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
+ dialog.addEventListener('close',()=>{flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
   el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
