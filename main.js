@@ -434,9 +434,8 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(seedScale));
  }
  // Letter baselines follow the same quadratic curve, 10px above the dotted track.
- const labelEnd=m.W<=650?Math.max(startX+12,endX-56):endX,labelMid=(startX+labelEnd)/2,labelEndY=trackY(labelEnd,m),labelControl=2*trackY(labelMid,m)-(a1.y+labelEndY)/2;
- futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+labelMid+' '+(labelControl-5)+' '+labelEnd+' '+(labelEndY-5):'');
- futureTextPath.setAttribute('startOffset',m.W<=650?'50%':'54%');
+ futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+midFuture+' '+(controlY-5)+' '+endX+' '+(endY-5):'');
+ futureTextPath.setAttribute('startOffset','54%');
  futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
