@@ -24,59 +24,54 @@ function showFallenFruit(){
  forest.querySelectorAll('.project-tree').forEach((tree,i)=>{
   const key=fruitId(forestProjects[i]),group=tree.querySelector('.fallen-fruits'),count=fruitCounts[key]||0,pending=fruitPending[key]||0;
   if(!group)return;
-  // Reproducible positions per project, verified against the actual layered
-  // tree silhouettes: at least 6 of 9 cone footprint samples touch the tree.
+  // Keep a deterministic but project-specific scatter of cones around the roots.
+  // The visit order is retained in sessionStorage; only the newest cones fall.
   let seed=2166136261;
-  for(const char of key){seed=Math.imul(seed^char.charCodeAt(0),16777619)>>>0}
+  for(const char of key)seed=Math.imul(seed^char.charCodeAt(0),16777619)>>>0;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
-  const masks=[...tree.querySelectorAll('.project-tree-layers path')];
-  const inside=(x,y)=>masks.some(path=>path.isPointInFill(new DOMPoint(x,y)));
-  const coverage=(x,y)=>{
-   let hits=0;
-   for(const dx of [-3,0,3])for(const dy of [-6,0,6])if(inside(x+dx,y+dy))hits++;
-   return hits;
-  };
-  const sites=[];
-  // Generate and remember a shuffled distribution, not the same growth order
-  // on all trees. Existing cones keep their deterministic positions on reload.
-  // Cones hang on the lateral branches: keep a clear corridor around
-  // the central trunk, and require >= 6/9 footprint samples inside foliage.
-  const trunkHalfWidth=19;
-  for(let attempt=0;attempt<1400&&sites.length<40;attempt++){
-   const side=random()<.5?-1:1;
-   const y=127+random()*193;
-   const branchDistance=trunkHalfWidth+random()*46;
-   const x=96+side*branchDistance;
-   if(coverage(x,y)<6)continue;
-   if(sites.some(p=>Math.hypot(p.x-x,p.y-y)<18))continue;
-   sites.push({x,y,turn:Math.round((random()-.5)*28)});
+  const landingSites=[];
+  for(let k=0;k<24;k++){
+   const side=k%2===0?-1:1;
+   const spread=12+random()*38;
+   landingSites.push({x:96+side*spread,y:356-random()*8,turn:side*(58+random()*52)});
   }
-  // Each project keeps its own stable sequence, without a center-trunk fallback.
-  const fallbackSites=[[66,212],[127,228],[60,263],[134,275],[70,305],[125,314]];
+  // Different branch for each visit; the cone never originates outside the tree.
+  const branchSites=[];
+  for(let k=0;k<24;k++){
+   const side=random()<.5?-1:1;
+   branchSites.push({x:96+side*(20+random()*35),y:162+random()*135});
+  }
   for(let j=group.children.length;j<count;j++){
-   const site=sites.length?sites[j%sites.length]:{x:fallbackSites[j%fallbackSites.length][0],y:fallbackSites[j%fallbackSites.length][1],turn:0};
-   const cycle=Math.floor(j/Math.max(1,sites.length));
-   const shift=Math.min(cycle*1.5,3);
-   const side=site.x<96?-1:1;
-   const x=site.x+side*Math.sin(j*1.83)*shift;
-   const y=site.y+Math.cos(j*1.49)*shift;
-   const turn=site.turn;
+   const ring=Math.floor(j/landingSites.length),site=landingSites[j%landingSites.length];
+   const x=site.x+Math.sin(j*2.11)*Math.min(ring*3,7);
+   const y=site.y-Math.min(ring*5,21);
+   const turn=site.turn+(random()-.5)*17;
    const g=document.createElementNS(svgNS,'g');
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
    const img=document.createElementNS(svgNS,'image');
-   img.setAttribute('href','./assets/spruce-cone.svg?v=bracts-v2');
-   img.setAttribute('x','-5');img.setAttribute('y','-9');
-   img.setAttribute('width','10');img.setAttribute('height','17');
+   img.setAttribute('href','./assets/spruce-cone.svg?v=earth-brown-1');
+   img.setAttribute('x','-5');img.setAttribute('y','-8');
+   img.setAttribute('width','10');img.setAttribute('height','16');
    g.append(img);group.append(g);
-   // The cone remains on its branch. New visits grow it in place, with no travel.
-   if(j>=count-pending&&!reduced){
-    const bloom=img.animate([
-     {transform:'scale(.08) rotate(-9deg)',opacity:0,offset:0},
-     {transform:'scale(.42) rotate(5deg)',opacity:.65,offset:.37},
-     {transform:'scale(1.10) rotate(-2deg)',opacity:1,offset:.77},
-     {transform:'scale(1) rotate(0deg)',opacity:1,offset:1}
-    ],{duration:780,delay:(j-count+pending)*125,easing:'cubic-bezier(.19,.74,.24,1)',fill:'backwards'});
-    bloom.onfinish=()=>bloom.cancel();
+   const fresh=j>=count-pending&&!reduced;
+   if(fresh){
+    const source=branchSites[j%branchSites.length];
+    const theta=turn*Math.PI/180,dx=source.x-x,dy=source.y-y;
+    const fromX=dx*Math.cos(theta)+dy*Math.sin(theta);
+    const fromY=-dx*Math.sin(theta)+dy*Math.cos(theta);
+    const start='translate('+fromX+'px,'+fromY+'px) rotate('+(-turn*.7)+'deg)';
+    const mid='translate('+(fromX*.58+4)+'px,'+(fromY*.54)+'px) rotate('+(36-turn*.5)+'deg)';
+    const near='translate(0px,2px) rotate(9deg)';
+    // Both transforms are local to the landing group. A delayed backward-filled
+    // animation prevents cones from blinking at the ground before they fall.
+    const fall=img.animate([
+     {transform:start,opacity:.95,offset:0},
+     {transform:mid,opacity:1,offset:.49},
+     {transform:near,opacity:1,offset:.84},
+     {transform:'translate(0px,-3px) rotate(-5deg)',opacity:1,offset:.93},
+     {transform:'translate(0px,0px) rotate(0deg)',opacity:1,offset:1}
+    ],{duration:1100,delay:240+(j-(count-pending))*130,easing:'cubic-bezier(.38,.05,.28,1)',fill:'backwards'});
+    fall.onfinish=()=>fall.cancel();
    }
   }
   fruitPending[key]=0;
