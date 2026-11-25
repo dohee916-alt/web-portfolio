@@ -668,3 +668,8 @@ body.reader-fullscreen-active header{visibility:hidden!important}
 #detail.portfolio-mode:focus,#detail.portfolio-mode:focus-visible,#detail.portfolio-mode #raonReader:focus,#detail.portfolio-mode #raonReader:focus-visible,#detail.portfolio-mode .raon-reader-media:focus,#detail.portfolio-mode .raon-reader-media:focus-visible,#detail.portfolio-mode #raonSlide:focus,#detail.portfolio-mode #raonSlide:focus-visible{outline:none!important;outline-offset:0!important}
 #detail.portfolio-mode button:focus-visible{outline:none;filter:drop-shadow(0 0 3px #f4eedcaa)}
 #detail.portfolio-mode.arrow-key-reading :focus{outline:none!important;filter:none!important}
+
+/* Dismiss the timeline as one visual group when a project opens. The picked dot still flies independently. */
+#scene[data-phase=opening] #curve,#scene[data-phase=detail] #curve,#scene[data-phase=closing] #curve{opacity:0;transition:opacity .25s ease}
+#scene[data-phase=opening] #layers .anchor:not(.picked),#scene[data-phase=detail] #layers .anchor:not(.picked),#scene[data-phase=closing] #layers .anchor:not(.picked){opacity:0;transition:opacity .25s ease}
+#scene[data-phase=explore] #curve,#scene[data-phase=explore] #layers .anchor:not(.picked){transition:opacity .25s ease}
