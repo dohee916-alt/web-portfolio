@@ -110,16 +110,29 @@ if(forest){
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
   return tree;
  });
- function placeForestLabels(){
+ let labelPaper=null;
+ function placeForestLabels(paper){
   const W=scene.clientWidth,H=scene.clientHeight,margin=8;
   if(!W||!H)return;
+  if(paper)labelPaper=paper;
   labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
+  const w=introPaperWidth(W,H)*1.15,h=w*9.5/7;
+  const card=paper||labelPaper||{left:(W-w)/2,right:(W+w)/2,top:(H-h)/2,bottom:(H+h)/2};
+  const growing=$('stillGrowing').getBoundingClientRect(),sr=scene.getBoundingClientRect();
+  const title={left:growing.left-sr.left,right:growing.right-sr.left,top:growing.top-sr.top,bottom:growing.bottom-sr.top};
   trees.forEach((tree,i)=>{
    const label=labels[i],tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
    if(!label||!Number.isFinite(tx)||!Number.isFinite(ty))return;
-   const width=label.getComputedTextLength(),half=width/2;
-   label.setAttribute('x',String(clamp(tx,margin+half,Math.max(margin+half,W-margin-half))));
-   label.setAttribute('y',String(Math.min(H-8,ty+15)));
+   const half=label.getComputedTextLength()/2,idealY=Math.min(H-8,ty+15);
+   const cx=v=>clamp(v,margin+half,Math.max(margin+half,W-margin-half));
+   const x0=cx(tx),over=(x,y,r)=>x+half>r.left-4&&x-half<r.right+4&&y-10<r.bottom+4&&y+3>r.top-4;
+   let x=x0,y=idealY;
+   if(over(x,y,card)||over(x,y,title)){
+    const candidates=[[card.left-half-8,y],[card.right+half+8,y],[x,card.top-8],[x,card.bottom+16]];
+    const valid=candidates.map(([a,b])=>[cx(a),clamp(b,24,H-8)]).filter(([a,b])=>!over(a,b,card)&&!over(a,b,title)).sort((a,b)=>Math.hypot(a[0]-x0,a[1]-idealY)-Math.hypot(b[0]-x0,b[1]-idealY));
+    if(valid.length){[x,y]=valid[0]}
+   }
+   label.setAttribute('x',String(x));label.setAttribute('y',String(y));
   });
  }
  updateForestLabels=placeForestLabels;
@@ -403,6 +416,8 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   const top=Math.min(...vertices.map(v=>v[1])),left=Math.min(...vertices.map(v=>v[0])),right=Math.max(...vertices.map(v=>v[0]));
   growing.style.left=((left+right)/2)+'px';
   growing.style.top=(top+m.topInset-8)+'px'; // Eight pixels above the actual projected upper edge.
+  const bottom=Math.max(...vertices.map(v=>v[1]));
+  updateForestLabels({left,right,top:top+m.topInset,bottom:bottom+m.topInset});
  }
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
  const touchBack=touchLayout(),atStart=phase==='explore'&&focus<-.965&&target<-.965;
