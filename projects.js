@@ -2,7 +2,7 @@
 window.PROJECTS = [
   {
     "id": "personal-history",
-    "year": "01–04",
+    "year": "2002~2023",
     "title": "My Journey",
     "category": "Perspective",
     "description": "Systems: 사람의 선택과 사회가 움직이는 원리에 대한 관심. 경제와 경영은 세상을 이해하는 첫 번째 관점이었다.\nVisual Exploration: 이미지를 조합하고 새로운 형태를 만드는 일에 몰입하면서 시각적 표현의 가능성을 발견했다.\nQuestioning: 당연하게 여겼던 목표와 그 목적을 다시 묻는 과정에서 새로운 방향을 발견했다.\nIntegration: 서로 다른 관심사와 사고의 방식을 디자인이라는 하나의 영역으로 연결해 나가고 있다.",
