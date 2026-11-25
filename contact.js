@@ -5,7 +5,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  const dialog=document.getElementById('contactDialog'),openButton=document.getElementById('contactOpen'),seedButton=document.getElementById('contactSeed'),inline=document.getElementById('contactBloom'),stage=document.getElementById('seedStage'),leaf=document.getElementById('detachableLeaf'),surface=document.getElementById('contactLeafSurface'),email=document.getElementById('contactEmail');
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  let grown=false,copiedEmail=false,bloomLevel=0,timer=0,flight=null,pendingBloom=false;
- const MAX_BLOOM=5;
+ const MAX_BLOOM=7;
  function updateBloom(){
   stage.dataset.bloom=String(bloomLevel);
   stage.classList.toggle('bud-grown',bloomLevel>=1);
