@@ -376,13 +376,11 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
 }focus=mix(focus,target,1-Math.exp(-dt*(drag?35:wheelAt?26:10)));if(Math.abs(focus-target)<.001)focus=target;
  if(phase==='animation'){
   if(returning){unfold=Math.max(0,unfold-dt/LAUNCH_END)}
-  else if(launchLocked){unfold=Math.min(1,unfold+playDt/3);unfoldTarget=1}
-  else if(held()){const diff=unfoldTarget-unfold;const maxStep=dt*(touchHold?.10:.20);unfold+=clamp(diff,-maxStep,maxStep);if(Math.abs(unfoldTarget-unfold)<.0001)unfold=unfoldTarget}
-  else if(autoUnfold){const speed=1/6.8;unfold=Math.min(1,unfold+playDt*speed);releaseBoost*=Math.exp(-dt*3);unfoldTarget=1}
-  if(!returning&&!launchLocked&&unfold>=DOWN_END/LAUNCH_END-.0001){launchLocked=true;clearIntroControl();unfoldTarget=1;drag=null;scene.classList.remove('dragging')}
+  else{unfold=Math.min(1,unfold+playDt/(LAUNCH_END*1.5));unfoldTarget=1}
+  if(drag){drag=null;scene.classList.remove('dragging')}
  }
  if(phase==='animation'&&returning&&unfold===0&&unfoldTarget===0){returning=false;launchLocked=false;lastWheel=performance.now();setPhase('intro');$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;cards.forEach((o,i)=>o.card.disabled=i!==0)}
- if(phase==='animation'&&unfold===1&&unfoldTarget===1&&!held()){clearIntroControl();autoUnfold=false;launchLocked=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
+ if(phase==='animation'&&unfold===1&&unfoldTarget===1){clearIntroControl();autoUnfold=false;launchLocked=false;gate=true;lastWheel=performance.now();setPhase('explore');unfold=unfoldTarget=1;$('nav').hidden=false;$('hint').textContent=mobile()?'좌우로 탐색 · 아래로 드래그하여 접기':'스크롤하여 탐색';$('eyebrow').textContent='02 / EXPLORE';$('headline').textContent='';cards.forEach(o=>o.card.disabled=false)}
  const time=unfold*LAUNCH_END;const archive=phase==='explore'||(!treeReturn&&(phase==='opening'||phase==='detail'||phase==='closing'));
  const active=archive||phase==='animation'&&unfold*LAUNCH_END>=LAUNCH_START;
  for(let i=0;i<N;i++){const d=i-focus;const want=active?100*Math.exp(-Math.pow(Math.abs(d)/.60,2)):0;lift[i]=phase==='animation'?want:mix(lift[i],want,1-Math.exp(-dt*14))}
@@ -494,17 +492,16 @@ function enterTransition(){
  if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
  scene.classList.remove('intro-card-hover');
 }
-function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus;autoUnfold=true;unfoldTarget=1;$('hint').textContent=mobile()?'누르고 드래그하여 조절 · 놓으면 계속 재생':'종이 위에서 마우스를 움직여 조절 · 벗어나면 계속 재생'}
+function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus;autoUnfold=true;unfoldTarget=1;$('hint').textContent=''}
 function navigate(delta,axis='y'){
- if(returning||launchLocked)return;
- if(!delta||!['intro','animation','explore'].includes(phase))return;
+ if(returning||phase==='animation')return;
+ if(!delta||!['intro','explore'].includes(phase))return;
  if(axis==='x'){
   if(phase==='explore')target=clamp(target+delta,-1,N-1);
   return;
  }
  if(phase==='explore'){if(delta>=0)return;enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;returning=true;return}
  if(phase==='intro'){if(delta<=0)return;start();return}
- if(phase==='animation'&&touchHold)unfoldTarget=clamp(unfoldTarget+delta/(RANGE*.72),0,1);
 }
 function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
@@ -698,15 +695,11 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])foldButton.
 function step(d){if(phase==='explore'){gate=false;target=clamp(Math.round(target)+d,-1,N-1);wheelAt=0}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 let wheelAxis=null,wheelDirection=0,returning=false,launchLocked=false;
-let hoverArmed=false,hoverHold=false,touchHold=false,releaseBoost=0;
-function held(){return !launchLocked&&(hoverHold||touchHold)}
-function pauseIntro(){unfoldTarget=unfold;releaseBoost=0}
-function resumeIntro(){if(!held()){unfoldTarget=1;releaseBoost=0}}
-function clearIntroControl(){hoverArmed=false;hoverHold=false;touchHold=false;releaseBoost=0;}
+function clearIntroControl(){drag=null;scene.classList.remove('dragging')}
 scene.addEventListener('wheel',e=>{
  if(treeReturn||!['intro','animation','explore'].includes(phase))return;e.preventDefault();
  const now=performance.now(),gap=now-lastWheel;lastWheel=now;
- if(returning||launchLocked)return;
+ if(returning||phase==='animation')return;
  if(phase==='explore'&&gate){if(gap<120)return;gate=false;}
  const gallery=phase==='explore';
  let delta=gallery?(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY):e.deltaY;
@@ -726,30 +719,22 @@ scene.addEventListener('wheel',e=>{
   const residual=clamp(eventSpeed*.18,-4.5,4.5);
   scrollSpeed=fresh?0:mix(scrollSpeed,residual,.55);
   wheelAt=now;target=clamp(target+units,-1,N-1);
- }else if(phase==='animation'){
-  // Wheel scrubbing shares the same paused playhead as mouse-hover scrubbing.
-  if(!delta||touchHold)return;
-  if(pick(e)<0){if(hoverHold){hoverHold=false;resumeIntro()}return}
-  if(!hoverHold){hoverHold=true;pauseIntro()}
-  const range=Math.max(700,measure().viewportH*1.8);
-  const step=clamp(delta/range,-.025,.025);
-  unfoldTarget=clamp(unfoldTarget+step,Math.max(0,unfold-.04),Math.min(DOWN_END/LAUNCH_END,unfold+.04));
  }else navigate(clamp(delta/105,-1.5,1.5),'y');
 },{passive:false});
 scene.addEventListener('pointerdown',e=>{
  // Touch gestures during the intro are owned exclusively by the touch handlers below.
  if(e.pointerType==='touch'&&(phase==='intro'||phase==='animation'))return;
  if(phase==='intro'&&e.pointerType==='pen'&&e.isPrimary!==false){e.preventDefault();start();return}
- if(returning||launchLocked||!['intro','animation','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
+ if(returning||!['intro','explore'].includes(phase)||e.target.closest('#nav')||e.button!==0)return;
  if(phase==='explore'&&wheelAt){wheelAt=0;scrollSpeed=0;wheelDirection=0;target=focus}
- drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target,touch:e.pointerType==='touch'};if(phase==='animation'&&e.pointerType!=='mouse'){touchHold=true;pauseIntro();}velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
+ drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,axis:null,lastY:e.clientY,startTarget:target,touch:e.pointerType==='touch'};velocity=0;lastDragX=e.clientX;lastDragT=performance.now();
 });
 window.addEventListener('pointermove',e=>{
- if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ if(!drag||e.pointerId!==drag.id||phase==='animation')return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
  if(!drag.axis&&Math.hypot(dx,dy)>7){drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';drag.moved=true;scene.classList.add('dragging')}
  if(!drag.axis||launchLocked||returning)return;
  const now=performance.now(),m=measure();
- if(drag.axis==='y'&&phase==='animation'&&touchHold){unfoldTarget=clamp(unfoldTarget-(e.clientY-drag.lastY)/Math.max(160,m.viewportH*.65),0,1)}else if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
+ if(drag.axis==='y'&&(mobile()||phase!=='explore'))navigate(-(e.clientY-drag.lastY)/(m.viewportH*.16),'y');
  if(drag.axis==='x'&&phase==='explore'){gate=false;const delta=-(e.clientX-lastDragX)/(drag.touch?clamp(m.trackStep*.52,24,58):Math.max(24,m.trackStep));navigate(delta,'x');const v=delta*1000/Math.max(8,now-lastDragT);velocity=clamp(mix(velocity,v,.65),drag.touch?-30:-5,drag.touch?30:5)}
  drag.lastY=e.clientY;lastDragX=e.clientX;lastDragT=now;
 });
@@ -771,57 +756,34 @@ function endDrag(e){
  }
  if(!coast)velocity=0;
  drag=null;
- if(touchHold){touchHold=false;if(phase==='animation'&&!returning)resumeIntro()}
  scene.classList.remove('dragging');
 }
-// Only actual pointer movement can interrupt automatic playback.
-let mousePoint=null;
+// The pointer only highlights the unopened stack; playback cannot be scrubbed.
 scene.addEventListener('pointermove',e=>{
- if(e.pointerType!=='mouse'||matchMedia('(hover: none) and (pointer: coarse)').matches)return;
- const prev=mousePoint;mousePoint={clientX:e.clientX,clientY:e.clientY};
- if(phase==='intro'){scene.classList.toggle('intro-card-hover',pick(e)>=0);return}
- if(phase!=='animation'||returning||launchLocked||touchHold||!prev)return;
- const dx=e.clientX-prev.clientX,dy=e.clientY-prev.clientY;
- if(!dx&&!dy)return;
- const hit=pick(e)>=0;
- if(!hit){if(hoverHold){hoverHold=false;resumeIntro()}return}
- if(!hoverHold){hoverHold=true;pauseIntro();return}
- unfoldTarget=clamp(unfoldTarget-dy/Math.max(160,measure().viewportH*.65),0,1);
+ if(e.pointerType==='mouse'&&phase==='intro')scene.classList.toggle('intro-card-hover',pick(e)>=0);
 });
-scene.addEventListener('pointerleave',()=>{mousePoint=null;scene.classList.remove('intro-card-hover');if(phase==='animation'&&!launchLocked&&hoverHold){hoverHold=false;resumeIntro()}});
-// Native touch ownership: independent of mouse hover, click synthesis, and gallery drag.
+scene.addEventListener('pointerleave',()=>scene.classList.remove('intro-card-hover'));
+// Own the initial touch and consume further touches until the transition is complete.
 let introTouch=null;
 scene.addEventListener('touchstart',e=>{
- if(!['intro','animation'].includes(phase)||returning||launchLocked||introTouch||e.target.closest('#nav, #reset, #detail'))return;
+ if(!['intro','animation'].includes(phase)||e.target.closest('#nav, #reset, #detail, .project-tree'))return;
  const t=e.changedTouches[0];if(!t)return;
- e.preventDefault();drag=null;hoverHold=false;
- const initial=phase==='intro';
- if(initial)start();
- introTouch={id:t.identifier,y:t.clientY,initial,travel:0};
- if(!initial){touchHold=true;pauseIntro()}
+ if(e.cancelable)e.preventDefault();
+ if(introTouch)return;
+ introTouch={id:t.identifier};drag=null;
+ if(phase==='intro')start();
 },{passive:false});
 window.addEventListener('touchmove',e=>{
- if(!introTouch||phase!=='animation')return;
- const t=Array.from(e.changedTouches).find(v=>v.identifier===introTouch.id);if(!t)return;
- e.preventDefault();
- if(launchLocked||returning)return;
- const dy=t.clientY-introTouch.y;introTouch.y=t.clientY;introTouch.travel+=dy;
- // A first tap starts playback; dragging that same contact also grabs the sheet.
- if(!touchHold){if(Math.abs(introTouch.travel)<5)return;touchHold=true;pauseIntro();return}
- const range=Math.max(600,measure().viewportH*2.0);
- unfoldTarget=clamp(unfoldTarget-dy/range,Math.max(0,unfold-.025),Math.min(DOWN_END/LAUNCH_END,unfold+.025));
+ if(introTouch&&e.cancelable)e.preventDefault();
 },{passive:false});
 function finishIntroTouch(e){
- if(!introTouch)return;
- if(!Array.from(e.changedTouches).some(v=>v.identifier===introTouch.id))return;
+ if(!introTouch||!Array.from(e.changedTouches).some(v=>v.identifier===introTouch.id))return;
  if(e.cancelable)e.preventDefault();
  introTouch=null;drag=null;
- if(phase==='animation'&&!returning&&!launchLocked){hoverHold=false;touchHold=false;autoUnfold=true;resumeIntro()}
- else touchHold=false;
 }
 window.addEventListener('touchend',finishIntroTouch,{passive:false});
 window.addEventListener('touchcancel',finishIntroTouch,{passive:false});
-window.addEventListener('blur',()=>{if(!introTouch&&!touchHold)return;introTouch=null;drag=null;touchHold=false;hoverHold=false;if(phase==='animation'&&!returning&&!launchLocked){autoUnfold=true;resumeIntro()}});
+window.addEventListener('blur',()=>{introTouch=null;drag=null});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{if($('contactDialog')?.open)return;if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 // Persist only the current tab's reading position, not the rendered geometry.
