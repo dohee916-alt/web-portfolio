@@ -497,10 +497,14 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #scene.tree-route #introForest .project-tree:not(.tree-chosen){opacity:calc(var(--tree-opacity,.5)*.65)}
 #introForest .tree-chosen{opacity:1}
 #introForest .tree-chosen .tree-layer{transform:scaleX(var(--open-width,1)) scaleY(1.08);fill:#a7c6a7;opacity:0;transition:transform .65s cubic-bezier(.22,.65,.3,1),opacity .45s .25s;transition-delay:var(--layer-delay)}
+/* Keep accumulated cones attached to the tree during fold and return. */
+#introForest .fallen-fruits{opacity:.78;transform-box:view-box;transform-origin:96px 362px;transition:opacity .45s ease,transform .65s cubic-bezier(.22,.65,.3,1)}
+#scene.tree-route:not([data-phase=closing]) #introForest .tree-chosen .fallen-fruits{opacity:0;transform:scaleX(.72) scaleY(1.08);transition:opacity .45s ease,transform .65s cubic-bezier(.22,.65,.3,1)}
 #scene.tree-route #world,#scene.tree-route #stillGrowing,#scene.tree-route #nav{opacity:0;pointer-events:none}
 /* Tree-origin project transitions never expose the archive track or anchors. */
 #scene.tree-route #world,#scene.tree-route #curve,#scene.tree-route #layers .anchor{opacity:0!important;visibility:hidden!important;transition:none!important}
 #scene[data-phase=closing].tree-route #introForest .tree-chosen .tree-layer{transform:none;opacity:.78;fill:#183a29;transition:transform .65s ease,opacity .55s ease;transition-delay:var(--layer-delay)}
+#scene[data-phase=closing].tree-route #introForest .tree-chosen .fallen-fruits{opacity:.78;transform:none;transition:opacity .55s ease,transform .65s ease}
 @media(prefers-reduced-motion:reduce){#introForest *{transition:none!important}}
 
 /* The full-screen world formerly intercepted pointer hits above the grove. Keep
@@ -519,4 +523,4 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #layers .anchor span{bottom:calc(100% + 23px)}
 #layers .anchor b{bottom:calc(100% + 7px)}
 #introForest .fallen-fruits{pointer-events:none}
-#introForest .fallen-fruits image{transform-box:fill-box;transform-origin:center}
+#introForest .fallen-fruits image{transform-box:fill-box;transform-origin:center;opacity:.84}
