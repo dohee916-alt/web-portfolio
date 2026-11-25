@@ -5,11 +5,34 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  const dialog=document.getElementById('contactDialog'),openButton=document.getElementById('contactOpen'),seedButton=document.getElementById('contactSeed'),inline=document.getElementById('contactBloom'),stage=document.getElementById('seedStage'),leaf=document.getElementById('detachableLeaf'),surface=document.getElementById('contactLeafSurface'),email=document.getElementById('contactEmail');
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  let grown=false,timer=0,flight=null;
- email.href='mailto:'+CONTACT.email;email.textContent=CONTACT.email;
+ const copyStatus=document.getElementById('contactCopyStatus');
+ let copyTimer=0,copyAttempt=0;
+ email.textContent=CONTACT.email;
+ function clearCopyStatus(){
+  ++copyAttempt;clearTimeout(copyTimer);copyStatus.textContent='';copyStatus.classList.remove('shown');
+ }
+ function announceCopy(message){
+  clearTimeout(copyTimer);copyStatus.textContent=message;copyStatus.classList.add('shown');
+  copyTimer=setTimeout(()=>copyStatus.classList.remove('shown'),2000);
+ }
+ function fallbackCopy(){
+  const field=document.createElement('textarea');
+  field.value=CONTACT.email;field.setAttribute('readonly','');
+  Object.assign(field.style,{position:'fixed',left:'0',top:'0',width:'1px',height:'1px',opacity:'0',pointerEvents:'none',fontSize:'16px'});
+  dialog.append(field);
+  try{field.focus();field.select();field.setSelectionRange(0,field.value.length);return document.execCommand('copy')}
+  finally{field.remove();email.focus({preventScroll:true})}
+ }
+ email.addEventListener('click',async()=>{
+  const attempt=++copyAttempt;let copied=false;
+  try{if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');await navigator.clipboard.writeText(CONTACT.email);copied=true}
+  catch(err){try{copied=fallbackCopy()}catch(e){}}
+  if(attempt===copyAttempt&&dialog.open)announceCopy(copied?'Email copied to clipboard.':'Unable to copy. Please copy manually.');
+ });
  function showContact(source=null){
   if(dialog.open)return;
   clearTimeout(timer);
-  dialog.classList.remove('leaf-arrived');
+  clearCopyStatus();dialog.classList.remove('leaf-arrived');
   dialog.showModal();
   const dest=surface.getBoundingClientRect();
   const final={transform:'translate(0px,0px) rotate(0deg) scale(1)',opacity:1};
@@ -51,7 +74,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  }
  openButton.addEventListener('click',()=>showContact());
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
+ dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
   el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
