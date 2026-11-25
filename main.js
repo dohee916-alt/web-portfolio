@@ -127,29 +127,16 @@ if(forest){
   const W=scene.clientWidth,H=scene.clientHeight;
   if(!W||!H)return;
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
-  // Desktop retains the original forest composition, including narrow browser windows.
+  // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
   const t=ease(clamp((W/H-.60)/1.05));
   const portrait=[{x:.19,y:.74,h:.35,alpha:.80},{x:.32,y:.31,h:.22,alpha:.80},{x:.83,y:.51,h:.27,alpha:.80},{x:.73,y:.92,h:.24,alpha:.80}];
   const landscape=[{x:.14,y:.84,h:.62,alpha:.80},{x:.29,y:.51,h:.35,alpha:.80},{x:.84,y:.64,h:.43,alpha:.80},{x:.72,y:.91,h:.34,alpha:.80}];
-  // Touch portrait uses its vertical space rather than four equally narrow side columns.
-  const phone=matchMedia('(hover:none) and (pointer:coarse)').matches&&W/H<1;
-  const stackHalf=introPaperWidth(W,H)*1.15/2,stackHalfH=stackHalf*9.5/7,top=H/2-stackHalfH;
-  const phoneSlots=[
-   {x:.20,y:.79,h:.34,maxW:.34},
-   {x:.36,y:(top-43)/H,h:.21,maxW:.27},
-   {x:.85,y:.54,h:.26,maxW:.27},
-   {x:.71,y:.94,h:.30,maxW:.37}
-  ];
   trees.forEach((tree,i)=>{
    const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38};
-   const p=portrait[i]||fallback,l=landscape[i]||fallback,q=phoneSlots[i];
-   let height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192),desiredX=W*mix(p.x,l.x,t),desiredY=H*mix(p.y,l.y,t);
-   if(phone&&q){
-    desiredY=H*q.y;desiredX=W*q.x;
-    height=Math.min(H*q.h,W*q.maxW*362/192,Math.max(40,desiredY-46));
-   }
+   const p=portrait[i]||fallback,l=landscape[i]||fallback;
+   const height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192);
    const scale=height/362,half=height*96/362+height*.025;
-   const x=clamp(desiredX,half+8,W-half-8),y=clamp(desiredY,Math.min(H-25,height+42),H-25);
+   const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
    tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
    tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);tree.querySelectorAll('.fallen-fruits image').forEach(img=>sizeCone(img,scale));
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
