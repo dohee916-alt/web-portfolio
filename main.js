@@ -394,9 +394,12 @@ function archivePose(i,m,f=focus,amount=1){
  return alignTop(p,m,i,a.x+mix(Math.min(m.galleryW*.16,25),0,m.compact),a.y+mix(Math.max(35,88-lift[i]*amount*.48)*k,compactGap,m.compact));
 }
 const actualMobileReader=()=>navigator.maxTouchPoints>0&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
+let fullReader=false;
 function panelTarget(m){
- const W=m.W,H=m.viewportH,rotated=actualMobileReader()&&detail.classList.contains('has-slides');
- const pad=clamp(W*.018,8,22),iw=rotated?Math.min(H*.86-2*pad,(W*.76-2*pad)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
+ const W=m.W,H=m.viewportH,rotated=fullReader&&H>W;
+ const pad=fullReader?0:clamp(W*.018,8,22);
+ const iw=fullReader?Math.min(rotated?H:W,(rotated?W:H)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9);
+ const w=iw+2*pad,h=iw*9/16+2*pad;
  detail.classList.toggle('mobile-rotated-reader',rotated);
  return {x:(W-w)/2,y:(H-h)/2,w,h,pad,rotated};
 }
@@ -733,6 +736,34 @@ function finishPagePointer(e){
  if(e.type==='pointerup'&&g?.kind==='swipe'&&pageZoom<=1.001){const dx=p.x-g.x,dy=p.y-g.y;if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.3)moveRaonSlide(dx<0?1:-1)}
 }
 pageMedia.addEventListener('pointerup',finishPagePointer);pageMedia.addEventListener('pointercancel',finishPagePointer);
+const fullButton=$('readerFullscreen');
+let nativeReaderFullscreen=false;
+function setReaderFullscreen(active){
+ fullReader=active;detail.classList.toggle('reader-fullscreen',active);document.body.classList.toggle('reader-fullscreen-active',active);
+ fullButton.setAttribute('aria-label',active?'Exit fullscreen':'View fullscreen');
+ fullButton.setAttribute('aria-pressed',String(active));
+ resetPageZoom();
+ if(phase==='detail'){if(treeReturn)renderTreePanel(measure(),1);else renderPanel(measure(),1)}
+}
+function exitReaderFullscreen(){
+ if(!fullReader)return;
+ setReaderFullscreen(false);
+ if(nativeReaderFullscreen&&document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+ nativeReaderFullscreen=false;
+}
+fullButton.addEventListener('click',()=>{
+ if(phase!=='detail'||slideBusy||!actualMobileReader())return;
+ if(fullReader){exitReaderFullscreen();return}
+ setReaderFullscreen(true);
+ // The CSS reading mode works even when the browser cannot enter native fullscreen.
+ if(document.documentElement.requestFullscreen){
+  document.documentElement.requestFullscreen().then(()=>{if(fullReader)nativeReaderFullscreen=true;else if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{})}).catch(()=>{});
+ }
+});
+document.addEventListener('fullscreenchange',()=>{
+ if(!document.fullscreenElement&&nativeReaderFullscreen){nativeReaderFullscreen=false;if(fullReader)setReaderFullscreen(false)}
+});
+window.addEventListener('resize',()=>{if(fullReader)resetPageZoom()});
 let openingRequest=0;
 function renderTreePanel(m,u){
  const dest=panelTarget(m),origin=treeReturn.origin;
@@ -768,7 +799,7 @@ async function open(i,restore=null){
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  const m=measure();impactPose=restore?archivePose(i,m):{...poses[i]};impactAnchor=anchorAt(i,m);
  ++slideEpoch;slideBusy=false;projectPages=pages;readerTitle=p.title;resetPageZoom();
- detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);
+ detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);fullButton.hidden=!(hasPages&&actualMobileReader());
  const reader=$('raonReader');reader.hidden=!hasPages;reader.setAttribute('aria-label',p.title+' 포트폴리오 '+pages.length+'페이지');detail.classList.remove('slide-loaded');
  $('category').textContent=p.category||'';
  $('projectTitle').textContent=p.title;
@@ -781,6 +812,7 @@ async function open(i,restore=null){
 }
 function close(){
  if(phase!=='detail'&&phase!=='opening')return;
+ if(fullReader){exitReaderFullscreen();return}
  closeFrom=detailProgress(performance.now());detail.classList.remove('visible');
  detail.setAttribute('aria-hidden','true');closingAt=performance.now();setPhase('closing')
 }
