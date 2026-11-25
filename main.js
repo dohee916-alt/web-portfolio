@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id),scene=$('scene'),root=$('layers'),items=
 const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a,b,t)=>a+(b-a)*t, ease=t=>{t=clamp(t);return t*t*(3-2*t)}, reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 const forestCompact=(W,H)=>Math.max(ease(clamp((980-W)/340)),ease(clamp((1.28-W/Math.max(1,H))/.48)));
-const introPaperWidth=(W,H)=>mix(Math.min(185,W*.43),Math.min(155,W*.31,H*.24),forestCompact(W,H));
+const introPaperWidth=(W,H)=>Math.min(185,W*.43);
 function sizeCone(img,s){const w=Math.max(12,10/Math.max(.12,s||.5)),h=w*1.6;img.setAttribute('x',String(-w/2));img.setAttribute('y',String(-h/2));img.setAttribute('width',String(w));img.setAttribute('height',String(h))}
 let treeReturn=null,treeOpening=false;let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
