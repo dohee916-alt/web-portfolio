@@ -50,8 +50,8 @@ function showFallenFruit(){
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
    const img=document.createElementNS(svgNS,'image');
    img.setAttribute('href','./assets/spruce-cone.svg?v=earth-brown-1');
-   img.setAttribute('x','-5');img.setAttribute('y','-8');
-   img.setAttribute('width','10');img.setAttribute('height','16');
+   img.setAttribute('x','-6');img.setAttribute('y','-9.6');
+   img.setAttribute('width','12');img.setAttribute('height','19.2');
    g.append(img);group.append(g);
    const fresh=j>=count-pending&&!reduced;
    if(fresh){
