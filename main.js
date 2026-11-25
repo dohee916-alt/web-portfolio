@@ -39,17 +39,27 @@ function showFallenFruit(){
   const sites=[];
   // Generate and remember a shuffled distribution, not the same growth order
   // on all trees. Existing cones keep their deterministic positions on reload.
-  for(let attempt=0;attempt<500&&sites.length<72;attempt++){
-   const x=55+random()*82,y=102+random()*205;
+  // Cones hang on the lateral branches: keep a clear corridor around
+  // the central trunk, and require >= 6/9 footprint samples inside foliage.
+  const trunkHalfWidth=19;
+  for(let attempt=0;attempt<1400&&sites.length<40;attempt++){
+   const side=random()<.5?-1:1;
+   const y=127+random()*193;
+   const branchDistance=trunkHalfWidth+random()*46;
+   const x=96+side*branchDistance;
    if(coverage(x,y)<6)continue;
-   if(sites.some(p=>Math.hypot(p.x-x,p.y-y)<15))continue;
-   sites.push({x,y,turn:Math.round((random()-.5)*40)});
+   if(sites.some(p=>Math.hypot(p.x-x,p.y-y)<18))continue;
+   sites.push({x,y,turn:Math.round((random()-.5)*28)});
   }
+  // Each project keeps its own stable sequence, without a center-trunk fallback.
+  const fallbackSites=[[66,212],[127,228],[60,263],[134,275],[70,305],[125,314]];
   for(let j=group.children.length;j<count;j++){
-   const site=sites[j%sites.length]||{x:96,y:170+((j*31)%140),turn:0};
+   const site=sites.length?sites[j%sites.length]:{x:fallbackSites[j%fallbackSites.length][0],y:fallbackSites[j%fallbackSites.length][1],turn:0};
    const cycle=Math.floor(j/Math.max(1,sites.length));
-   const x=site.x+Math.sin(j*1.83)*Math.min(cycle*2,4);
-   const y=site.y+Math.cos(j*1.49)*Math.min(cycle*2,4);
+   const shift=Math.min(cycle*1.5,3);
+   const side=site.x<96?-1:1;
+   const x=site.x+side*Math.sin(j*1.83)*shift;
+   const y=site.y+Math.cos(j*1.49)*shift;
    const turn=site.turn;
    const g=document.createElementNS(svgNS,'g');
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
