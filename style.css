@@ -478,10 +478,10 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #scene[data-phase=intro]:not(.tree-route) #introForest .tree-layer{pointer-events:none}
 
 /* Young spruce cone trial: retain existing anchor center and collision point. */
-#layers .anchor:before{width:16px;height:26px;top:-8px;border:0;border-radius:0;background:transparent url('./assets/spruce-cone.svg') center/contain no-repeat;box-shadow:none}
+#layers .anchor:before{width:16px;height:26px;top:-8px;border:0;border-radius:0;background:transparent url('./assets/spruce-cone.svg?v=bracts-v2') center/contain no-repeat;box-shadow:none}
 #layers .anchor span{bottom:calc(100% + 29px)}
 #layers .anchor b{bottom:calc(100% + 13px)}
 
 /* All anchor states share the cone artwork; legacy circle styles must never replace it. */
-#scene #layers .anchor:before,#scene #layers .anchor.active:before,#scene #layers .anchor.visited:before,#scene #layers .anchor.picked:before{background:transparent url('./assets/spruce-cone.svg') center/contain no-repeat;border:0;border-radius:0;box-shadow:none}
+#scene #layers .anchor:before,#scene #layers .anchor.active:before,#scene #layers .anchor.visited:before,#scene #layers .anchor.picked:before{background:transparent url('./assets/spruce-cone.svg?v=bracts-v2') center/contain no-repeat;border:0;border-radius:0;box-shadow:none}
 #scene #layers .anchor.active:before{filter:drop-shadow(0 0 3px #eac6a75c)}
