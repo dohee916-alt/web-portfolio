@@ -104,43 +104,16 @@ if(forest){
   return tree;
  });
  function placeForestLabels(){
-  const W=scene.clientWidth,H=scene.clientHeight,margin=10;
+  const W=scene.clientWidth,H=scene.clientHeight,margin=8;
   if(!W||!H)return;
   labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
-  const introW=Math.min(185,W*.43)*1.15,introH=introW*9.5/7;
-  const paper={x:(W-introW)/2,y:(H-introH)/2-26,w:introW,h:introH+26},placed=[];
-  for(const tree of trees){
-   const label=labels[trees.indexOf(tree)];
-   const s=Number(tree.dataset.treeScale),tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
-   if(!label||!s)continue;
-   const textW=Math.min(W-2*margin,Math.max(25,label.getComputedTextLength())),half=textW/2;
-   const idealX=tx,idealY=ty+22;
-   const cx=x=>Math.max(margin+half,Math.min(W-margin-half,x));
-   const cy=y=>Math.max(25,Math.min(H-12,y));
-   const candidates=[[idealX,idealY]];
-   if(paper){
-    for(const dy of [0,-24,24,-48,48]){
-     candidates.push([paper.x-14-half,idealY+dy],[paper.x+paper.w+14+half,idealY+dy]);
-    }
-    for(const dx of [0,-30,30]){
-     candidates.push([idealX+dx,paper.y-18],[idealX+dx,paper.y+paper.h+26]);
-    }
-   }
-   for(const dy of [-24,24,-48,48,-72,72,-96,96])candidates.push([idealX,idealY+dy]);
-   let best=null,score=Infinity;
-   for(const [px,py] of candidates){
-    const x=cx(px),y=cy(py),rect={x:x-half,y:y-13,w:textW,h:17};
-    const cover=paper&&rect.x<paper.x+paper.w+8&&rect.x+rect.w>paper.x-8&&rect.y<paper.y+paper.h+8&&rect.y+rect.h>paper.y-8;
-    const overlap=placed.some(p=>rect.x<p.x+p.w+6&&rect.x+rect.w>p.x-6&&rect.y<p.y+p.h+5&&rect.y+rect.h>p.y-5);
-    const cost=Math.abs(x-idealX)+Math.abs(y-idealY)*.7+(cover?100000:0)+(overlap?50000:0);
-    if(cost<score){score=cost;best={x,y,rect}}
-   }
-   if(best){
-    label.setAttribute('x',String(best.x));
-    label.setAttribute('y',String(best.y));
-    placed.push(best.rect);
-   }
-  }
+  trees.forEach((tree,i)=>{
+   const label=labels[i],tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
+   if(!label||!Number.isFinite(tx)||!Number.isFinite(ty))return;
+   const width=label.getComputedTextLength(),half=width/2;
+   label.setAttribute('x',String(clamp(tx,margin+half,Math.max(margin+half,W-margin-half))));
+   label.setAttribute('y',String(Math.min(H-8,ty+15)));
+  });
  }
  updateForestLabels=placeForestLabels;
  function layoutForest(){
