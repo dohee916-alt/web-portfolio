@@ -264,9 +264,26 @@ function paperOutline(s){
  return left.concat(right.reverse());
 }
 function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
-// Soften the internal overlap seams without blurring the exterior paper silhouette.
+// Blend the blurred image once, through a continuously feathered overlap mask.
+// Never cut and paste separate strips into the rendered paper.
 const seamSource=document.createElement('canvas'),seamBlur=document.createElement('canvas');
+const seamMask=document.createElement('canvas'),seamFeather=document.createElement('canvas');
 const seamSourceCtx=seamSource.getContext('2d'),seamBlurCtx=seamBlur.getContext('2d');
+const seamMaskCtx=seamMask.getContext('2d'),seamFeatherCtx=seamFeather.getContext('2d');
+function diffuseCanvas(out,source,radius,w,h){
+ out.setTransform(1,0,0,1,0,0);out.globalAlpha=1;out.globalCompositeOperation='source-over';out.clearRect(0,0,w,h);
+ if(typeof out.filter==='string'){
+  out.filter='blur('+radius+'px)';out.drawImage(source,0,0);out.filter='none';
+ }else{
+  out.globalCompositeOperation='lighter';
+  const weights=[1,4,6,4,1];
+  for(let j=0;j<5;j++)for(let i=0;i<5;i++){
+   out.globalAlpha=weights[i]*weights[j]/256;
+   out.drawImage(source,(i-2)*radius,(j-2)*radius);
+  }
+  out.globalAlpha=1;out.globalCompositeOperation='source-over';
+ }
+}
 function softenOverlapSeams(m,dpr,w,h){
  const sheets=silhouettes.filter(s=>s.p.opacity>.05&&s.L.length===2);
  if(sheets.length<2)return;
@@ -274,29 +291,30 @@ function softenOverlapSeams(m,dpr,w,h){
  const pairs=bounds.map(a=>bounds.filter(b=>a!==b&&a.minX<b.maxX&&a.maxX>b.minX&&a.minY<b.maxY&&a.maxY>b.minY));
  if(!pairs.some(p=>p.length))return;
  if(seamSource.width!==w||seamSource.height!==h){seamSource.width=seamBlur.width=w;seamSource.height=seamBlur.height=h}
- seamSourceCtx.clearRect(0,0,w,h);seamSourceCtx.drawImage(surface,0,0);
- seamBlurCtx.clearRect(0,0,w,h);
- // Native filtering where available; a small weighted sample kernel is the mobile fallback.
- if(typeof seamBlurCtx.filter==='string'){
-  seamBlurCtx.filter='blur('+(1.8*dpr)+'px)';seamBlurCtx.drawImage(seamSource,0,0);seamBlurCtx.filter='none';
- }else{
-  seamBlurCtx.globalCompositeOperation='lighter';
-  const weights=[1,4,6,4,1];for(let j=0;j<5;j++)for(let i=0;i<5;i++){
-   seamBlurCtx.globalAlpha=weights[i]*weights[j]/256;seamBlurCtx.drawImage(seamSource,(i-2)*1.8*dpr,(j-2)*1.8*dpr);
-  }
-  seamBlurCtx.globalAlpha=1;seamBlurCtx.globalCompositeOperation='source-over';
- }
+ const mw=Math.ceil(m.W),mh=Math.ceil(m.viewportH);
+ if(seamMask.width!==mw||seamMask.height!==mh){seamMask.width=seamFeather.width=mw;seamMask.height=seamFeather.height=mh}
+ const mask=seamMaskCtx;
+ mask.setTransform(1,0,0,1,0,0);mask.clearRect(0,0,mw,mh);mask.setTransform(1,0,0,1,0,m.topInset);
+ const trace=poly=>{mask.beginPath();poly.forEach((p,i)=>i?mask.lineTo(p[0],p[1]):mask.moveTo(p[0],p[1]));mask.closePath()};
+ mask.strokeStyle='#fff';mask.lineWidth=8;mask.lineJoin='round';mask.lineCap='round';
  bounds.forEach((a,i)=>{
   if(!pairs[i].length)return;
-  ctx.save();sheetPath(a.s);ctx.clip();
-  ctx.beginPath();
-  for(const b of pairs[i])for(let j=0;j<b.s.poly.length;j++){
-   const p=b.s.poly[j],q=b.s.poly[(j+1)%b.s.poly.length],dx=q[0]-p[0],dy=q[1]-p[1],len=Math.hypot(dx,dy)||1,nx=-dy/len*7,ny=dx/len*7;
-   ctx.moveTo(p[0]+nx,p[1]+ny);ctx.lineTo(q[0]+nx,q[1]+ny);ctx.lineTo(q[0]-nx,q[1]-ny);ctx.lineTo(p[0]-nx,p[1]-ny);ctx.closePath();
-  }
-  ctx.clip();ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,w,h);ctx.drawImage(seamBlur,0,0);ctx.restore();
+  mask.save();trace(a.s.poly);mask.clip();
+  for(const b of pairs[i]){trace(b.s.poly);mask.stroke()}
+  mask.restore();
  });
+ // Feather the mask itself, so the blur strength fades smoothly to zero.
+ diffuseCanvas(seamFeatherCtx,seamMask,2.5,mw,mh);
+ seamSourceCtx.setTransform(1,0,0,1,0,0);seamSourceCtx.clearRect(0,0,w,h);seamSourceCtx.drawImage(surface,0,0);
+ diffuseCanvas(seamBlurCtx,seamSource,1.8*dpr,w,h);
+ seamBlurCtx.globalCompositeOperation='destination-in';seamBlurCtx.drawImage(seamFeather,0,0,w,h);
+ seamBlurCtx.globalCompositeOperation='source-over';
+ // Premultiplied-alpha interpolation: original*(1-mask) + blur*mask.
+ // A single composition avoids repeated anti-aliased clip boundaries.
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
+ ctx.globalCompositeOperation='destination-out';ctx.drawImage(seamFeather,0,0,w,h);
+ ctx.globalCompositeOperation='lighter';ctx.drawImage(seamBlur,0,0);
+ ctx.restore();
 }
 function opticalRender(m){
  // Render on the entire scene, not just the lower world layout box.
