@@ -368,7 +368,7 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #contactDialog::backdrop{background:#00291d88;backdrop-filter:blur(3px)}
 #contactLeafSurface{position:relative;width:min(540px,88vw,90dvh);aspect-ratio:1.8;transform-origin:center;isolation:isolate;display:grid;place-items:center}
 #contactLeafSurface>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:-1;filter:drop-shadow(0 12px 24px #001c1644)}
-#contactLeafSurface .contact-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:76%;padding:0;opacity:0;transition:opacity .24s;transform:translateY(-2%)}
+#contactLeafSurface .contact-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:76%;padding:0;opacity:1;transition:none;transform:translateY(-2%)}
 #contactDialog.leaf-arrived .contact-copy{opacity:1}
 #contactDialog .contact-kicker{font-size:11px;color:#355641;opacity:.8}
 #contactDialog h2{font-size:clamp(15px,4vw,25px);color:#244532;letter-spacing:-.025em}
