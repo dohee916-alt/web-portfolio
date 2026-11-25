@@ -459,12 +459,12 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #introForest .tree-layer{transform-box:view-box;transform-origin:96px 362px;transition:transform .55s cubic-bezier(.22,.65,.3,1),opacity .35s,fill .35s;opacity:.78;pointer-events:none}
 #scene[data-phase=intro]:not(.tree-route) #introForest .tree-layer{pointer-events:visiblePainted;cursor:pointer}
 #scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible){opacity:1}
-#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-layer{transform:rotate(var(--fan));fill:#91b69a;opacity:.72;transition-delay:var(--layer-delay)}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-layer{transform:scaleX(var(--depth-width,1));fill:#719a7b;opacity:.80;transition-delay:var(--layer-delay)}
 #introForest .tree-label{font-family:'Maru Buri',serif;font-size:var(--label-size,14px);fill:#f4eedc;stroke:none;opacity:0;transition:opacity .28s ease;pointer-events:none}
 #scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-label{opacity:1}
 #scene.tree-route #introForest .project-tree:not(.tree-chosen){opacity:calc(var(--tree-opacity,.5)*.65)}
 #introForest .tree-chosen{opacity:1}
-#introForest .tree-chosen .tree-layer{transform:rotate(calc(var(--fan)*3)) scale(1.12);fill:#a7c6a7;opacity:0;transition:transform .65s cubic-bezier(.22,.65,.3,1),opacity .45s .25s;transition-delay:var(--layer-delay)}
+#introForest .tree-chosen .tree-layer{transform:scaleX(var(--open-width,1)) scaleY(1.08);fill:#a7c6a7;opacity:0;transition:transform .65s cubic-bezier(.22,.65,.3,1),opacity .45s .25s;transition-delay:var(--layer-delay)}
 #scene.tree-route #world,#scene.tree-route #stillGrowing,#scene.tree-route #nav{opacity:0;pointer-events:none}
 #scene[data-phase=closing].tree-route #introForest .tree-chosen .tree-layer{transform:none;opacity:.78;fill:#183a29;transition:transform .65s ease,opacity .55s ease;transition-delay:var(--layer-delay)}
 @media(prefers-reduced-motion:reduce){#introForest *{transition:none!important}}
