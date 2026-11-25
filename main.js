@@ -24,15 +24,18 @@ if(forest){
   const W=scene.clientWidth,H=scene.clientHeight;
   if(!W||!H)return;
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
-  const narrow=W/H<1.18;
-  const slots=narrow?
-   [{x:.20,y:.35,h:.24},{x:.79,y:.37,h:.21},{x:.18,y:.89,h:.25},{x:.82,y:.90,h:.28}]:
-   [{x:.135,y:.76,h:.467},{x:.305,y:.85,h:.342},{x:.704,y:.83,h:.40},{x:.865,y:.758,h:.525}];
+  // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
+  const t=ease(clamp((W/H-.60)/1.05));
+  const portrait=[{x:.19,y:.74,h:.35,alpha:.66,tilt:-2.5},{x:.32,y:.31,h:.17,alpha:.30,tilt:1.5},{x:.83,y:.51,h:.27,alpha:.47,tilt:2},{x:.73,y:.92,h:.20,alpha:.39,tilt:-1.5}];
+  const landscape=[{x:.14,y:.84,h:.62,alpha:.66,tilt:-2.5},{x:.29,y:.51,h:.30,alpha:.30,tilt:1.5},{x:.84,y:.64,h:.43,alpha:.47,tilt:2},{x:.72,y:.91,h:.29,alpha:.39,tilt:-1.5}];
   trees.forEach((tree,i)=>{
-   const side=slots[i]||{x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.30+(i%4)*.04};
-   const height=Math.min(H*side.h,W*(narrow?.31:.20)*380/200);
-   const scale=height/380,x=Math.max(height*100/380+8,Math.min(W-height*100/380-8,W*side.x)),y=H*side.y;
-   tree.setAttribute('transform','translate('+(x-100*scale)+' '+(y-height)+') scale('+scale+')');
+   const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38,tilt:0};
+   const p=portrait[i]||fallback,l=landscape[i]||fallback;
+   const height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*380/200);
+   const scale=height/380,half=height*100/380+height*.025;
+   const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
+   tree.setAttribute('transform','translate('+x+' '+y+') rotate('+mix(p.tilt,l.tilt,t)+') scale('+scale+') translate(-100 -380)');
+   tree.setAttribute('opacity',String(mix(p.alpha,l.alpha,t)));
   });
  }
  layoutForest();
