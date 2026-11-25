@@ -393,9 +393,12 @@ function archivePose(i,m,f=focus,amount=1){
  const compactGap=m.galleryW*.32+5;
  return alignTop(p,m,i,a.x+mix(Math.min(m.galleryW*.16,25),0,m.compact),a.y+mix(Math.max(35,88-lift[i]*amount*.48)*k,compactGap,m.compact));
 }
+const actualMobileReader=()=>navigator.maxTouchPoints>0&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 function panelTarget(m){
- const W=m.W,H=m.viewportH,pad=clamp(W*.018,8,22),iw=Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
- return {x:(W-w)/2,y:(H-h)/2,w,h,pad};
+ const W=m.W,H=m.viewportH,rotated=actualMobileReader()&&detail.classList.contains('has-slides')&&H>W;
+ const pad=clamp(W*.018,8,22),iw=rotated?Math.min(H*.86-2*pad,(W*.82-2*pad)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
+ detail.classList.toggle('mobile-rotated-reader',rotated);
+ return {x:(W-w)/2,y:(H-h)/2,w,h,pad,rotated};
 }
 function detailProgress(now){return phase==='closing'?closeFrom*(1-clamp((now-closingAt)/CLOSE_MS)):phase==='detail'?1:clamp((now-openedAt)/OPEN_MS)}
 function renderPanel(m,u){
@@ -404,6 +407,7 @@ function renderPanel(m,u){
  const w=mix(r*2,dest.w,t),h=mix(r*2,dest.h,t);
  const x=mix(dot.x-r,dest.x,t),y=mix(dot.y+m.topInset-r,dest.y,t);
  detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(r,2,t)+'px';
+ detail.style.setProperty('--reader-angle',dest.rotated?String(-90*t)+'deg':'0deg');
  detail.style.setProperty('--paper-pad',dest.pad+'px');
  // Render the finished page at its native aspect ratio inside the same growing silhouette.
  detail.style.setProperty('--page-width',dest.w+'px');detail.style.setProperty('--page-height',dest.h+'px');
@@ -665,6 +669,7 @@ function turnPaper(canvas,front,back,direction,epoch){
 async function moveRaonSlide(direction){
  if(slideBusy||!detail.classList.contains('has-slides')||phase!=='detail')return;
  const next=clamp(raonSlideIndex+direction,0,projectPages.length-1);if(next===raonSlideIndex)return;
+ resetPageZoom();
  const epoch=slideEpoch;slideBusy=true;updatePageNav();
  let overlay;
  try{
@@ -685,16 +690,49 @@ async function moveRaonSlide(direction){
 }
 $('raonPrev').addEventListener('click',()=>moveRaonSlide(-1));
 $('raonNext').addEventListener('click',()=>moveRaonSlide(1));
-$('raonReader').addEventListener('pointerdown',e=>{
- if(e.pointerType!=='touch'||e.target.closest('button'))return;
- raonTouchStart={x:e.clientX,y:e.clientY};
+// Touch gestures are confined to the page viewport, not the browser viewport.
+const pageMedia=$('raonReader').querySelector('.raon-reader-media');
+const pageTouches=new Map();let pageZoom=1,pagePanX=0,pagePanY=0,pageGesture=null;
+function applyPageZoom(){
+ const W=pageMedia.clientWidth,H=pageMedia.clientHeight;
+ pagePanX=clamp(pagePanX,-W*(pageZoom-1)/2,W*(pageZoom-1)/2);
+ pagePanY=clamp(pagePanY,-H*(pageZoom-1)/2,H*(pageZoom-1)/2);
+ $('raonSlide').style.transform='translate('+pagePanX+'px,'+pagePanY+'px) scale('+pageZoom+')';
+ pageMedia.classList.toggle('page-zoomed',pageZoom>1.001);
+}
+function resetPageZoom(){pageZoom=1;pagePanX=pagePanY=0;pageTouches.clear();pageGesture=null;applyPageZoom()}
+function pagePoint(e){
+ const r=pageMedia.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+ return detail.classList.contains('mobile-rotated-reader')?{x:-y,y:x}:{x,y};
+}
+function beginPinch(){
+ const [a,b]=[...pageTouches.values()];
+ pageGesture={kind:'pinch',distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),scale:pageZoom,x:(a.x+b.x)/2,y:(a.y+b.y)/2,panX:pagePanX,panY:pagePanY};
+}
+pageMedia.addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='touch'||phase!=='detail'||slideBusy)return;
+ e.preventDefault();pageMedia.setPointerCapture(e.pointerId);const p=pagePoint(e);pageTouches.set(e.pointerId,p);
+ if(pageTouches.size===2)beginPinch();
+ else if(pageTouches.size===1)pageGesture={kind:pageZoom>1.001?'pan':'swipe',x:p.x,y:p.y,panX:pagePanX,panY:pagePanY};
 });
-$('raonReader').addEventListener('pointerup',e=>{
- if(!raonTouchStart)return;
- const dx=e.clientX-raonTouchStart.x,dy=e.clientY-raonTouchStart.y;
- raonTouchStart=null;
- if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.3)moveRaonSlide(dx<0?1:-1);
+pageMedia.addEventListener('pointermove',e=>{
+ if(!pageTouches.has(e.pointerId)||!pageGesture)return;
+ const p=pagePoint(e);pageTouches.set(e.pointerId,p);const g=pageGesture;
+ if(g.kind==='pinch'&&pageTouches.size>=2){
+  const [a,b]=[...pageTouches.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  pageZoom=clamp(g.scale*Math.hypot(b.x-a.x,b.y-a.y)/g.distance,1,5);
+  const k=pageZoom/g.scale;pagePanX=mx-(g.x-g.panX)*k;pagePanY=my-(g.y-g.panY)*k;applyPageZoom();
+ }else if(g.kind==='pan'){pagePanX=g.panX+p.x-g.x;pagePanY=g.panY+p.y-g.y;applyPageZoom()}
 });
+function finishPagePointer(e){
+ if(!pageTouches.has(e.pointerId))return;
+ const p=pagePoint(e),g=pageGesture;pageTouches.delete(e.pointerId);
+ if(pageTouches.size===1){const v=[...pageTouches.values()][0];pageGesture={kind:'pan',x:v.x,y:v.y,panX:pagePanX,panY:pagePanY};return}
+ if(pageTouches.size){beginPinch();return}
+ pageGesture=null;
+ if(e.type==='pointerup'&&g?.kind==='swipe'&&pageZoom<=1.001){const dx=p.x-g.x,dy=p.y-g.y;if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.3)moveRaonSlide(dx<0?1:-1)}
+}
+pageMedia.addEventListener('pointerup',finishPagePointer);pageMedia.addEventListener('pointercancel',finishPagePointer);
 let openingRequest=0;
 function renderTreePanel(m,u){
  const dest=panelTarget(m),origin=treeReturn.origin;
@@ -706,6 +744,7 @@ function renderTreePanel(m,u){
  const cx=mix(origin.x,dest.x+dest.w/2,t),cy=mix(origin.y,dest.y+dest.h/2,t);
  detail.style.left=(cx-w/2)+'px';detail.style.top=(cy-h/2)+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(4,2,t)+'px';
  detail.style.setProperty('--tree-reveal',String(appear));
+ detail.style.setProperty('--reader-angle',dest.rotated?String(-90*t)+'deg':'0deg');
  detail.style.setProperty('--paper-pad',dest.pad+'px');detail.style.setProperty('--page-width',dest.w+'px');detail.style.setProperty('--page-height',dest.h+'px');
  detail.style.setProperty('--page-scale-x',String(scale));detail.style.setProperty('--page-scale-y',String(scale));detail.style.setProperty('--page-clip-radius',mix(4,2,t)+'px');detail.style.setProperty('--reveal',String(ease(clamp((u-.65)/.35))));
  detail.classList.add('morphing','content-ready');detail.classList.toggle('visible',phase==='detail');
@@ -728,7 +767,7 @@ async function open(i,restore=null){
  }
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  const m=measure();impactPose=restore?archivePose(i,m):{...poses[i]};impactAnchor=anchorAt(i,m);
- ++slideEpoch;slideBusy=false;projectPages=pages;readerTitle=p.title;
+ ++slideEpoch;slideBusy=false;projectPages=pages;readerTitle=p.title;resetPageZoom();
  detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);
  const reader=$('raonReader');reader.hidden=!hasPages;reader.setAttribute('aria-label',p.title+' 포트폴리오 '+pages.length+'페이지');detail.classList.remove('slide-loaded');
  $('category').textContent=p.category||'';
