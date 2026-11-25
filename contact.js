@@ -4,7 +4,17 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
 (()=>{
  const dialog=document.getElementById('contactDialog'),openButton=document.getElementById('contactOpen'),seedButton=document.getElementById('contactSeed'),inline=document.getElementById('contactBloom'),stage=document.getElementById('seedStage'),leaf=document.getElementById('detachableLeaf'),surface=document.getElementById('contactLeafSurface'),email=document.getElementById('contactEmail');
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
- let grown=false,timer=0,flight=null;
+ let grown=false,copiedEmail=false,timer=0,flight=null;
+ const GROWTH_KEY='folio-growth-v1';
+ function saveGrowth(){try{sessionStorage.setItem(GROWTH_KEY,JSON.stringify({grown,copiedEmail}))}catch(e){}}
+ function settlePlant(){
+  grown=true;stage.dataset.growth='grown';inline.dataset.growth='grown';
+  leaf.classList.add('detached');seedButton.tabIndex=0;
+  seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false');
+ }
+ try{const saved=JSON.parse(sessionStorage.getItem(GROWTH_KEY)||'null');
+ if(saved){copiedEmail=!!saved.copiedEmail;if(saved.grown){stage.classList.add('restore-growth');settlePlant();if(copiedEmail)stage.classList.add('bud-grown');requestAnimationFrame(()=>requestAnimationFrame(()=>stage.classList.remove('restore-growth')))}}
+ }catch(e){}
  const copyStatus=document.getElementById('contactCopyStatus');
  let copyTimer=0,copyAttempt=0;
  email.textContent=CONTACT.email;
@@ -27,6 +37,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   const attempt=++copyAttempt;let copied=false;
   try{if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');await navigator.clipboard.writeText(CONTACT.email);copied=true}
   catch(err){try{copied=fallbackCopy()}catch(e){}}
+  if(copied){copiedEmail=true;saveGrowth();if(grown&&!dialog.open)stage.classList.add('bud-grown')}
   if(attempt===copyAttempt&&dialog.open)announceCopy(copied?'Email copied to clipboard.':'Unable to copy. Please copy manually.');
  });
  function showContact(source=null){
@@ -80,7 +91,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  }
  openButton.addEventListener('click',()=>showContact());
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';stage.classList.add('bud-grown');seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
+ dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');if(grown){settlePlant();if(copiedEmail)stage.classList.add('bud-grown');saveGrowth()}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
   el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
@@ -93,7 +104,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   if(grown){if(stage.dataset.growth==='grown')showContact();return}
   grown=true;inline.dataset.growth='watering';stage.dataset.growth='watering';seedButton.setAttribute('aria-expanded','true');
   timer=setTimeout(()=>{
-   inline.dataset.growth='grown';stage.dataset.growth='grown';
+   inline.dataset.growth='grown';stage.dataset.growth='grown';saveGrowth();
    const origin=leaf.getBoundingClientRect();
    showContact(inline.hidden?null:origin);
   },reduced()?0:1900);
