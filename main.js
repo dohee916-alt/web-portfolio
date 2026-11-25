@@ -681,20 +681,24 @@ $('raonReader').addEventListener('pointerup',e=>{
 });
 let openingRequest=0;
 function renderTreePanel(m,u){
- const dest=panelTarget(m),origin=treeReturn.origin,t=ease(clamp((u-.32)/.68));
- if(u<.32){detail.classList.remove('morphing','visible','content-ready');return}
- const w=mix(Math.max(12,origin.w*.22),dest.w,t),h=mix(Math.max(12,origin.h*.22),dest.h,t);
- const x=mix(origin.x-w/2,dest.x,t),y=mix(origin.y-h/2,dest.y,t);
- detail.style.left=x+'px';detail.style.top=y+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(9,2,t)+'px';
+ const dest=panelTarget(m),origin=treeReturn.origin;
+ // One continuous, restrained translation and uniform enlargement.
+ const t=ease(clamp((u-.12)/.88)),appear=ease(clamp((u-.08)/.32));
+ if(u<.08){detail.classList.remove('morphing','visible','content-ready');return}
+ const initialScale=clamp(Math.min(origin.w/dest.w,origin.h/dest.h)*.62,.06,.20);
+ const scale=mix(initialScale,1,t),w=dest.w*scale,h=dest.h*scale;
+ const cx=mix(origin.x,dest.x+dest.w/2,t),cy=mix(origin.y,dest.y+dest.h/2,t);
+ detail.style.left=(cx-w/2)+'px';detail.style.top=(cy-h/2)+'px';detail.style.width=w+'px';detail.style.height=h+'px';detail.style.borderRadius=mix(4,2,t)+'px';
+ detail.style.setProperty('--tree-reveal',String(appear));
  detail.style.setProperty('--paper-pad',dest.pad+'px');detail.style.setProperty('--page-width',dest.w+'px');detail.style.setProperty('--page-height',dest.h+'px');
- detail.style.setProperty('--page-scale-x',String(w/dest.w));detail.style.setProperty('--page-scale-y',String(h/dest.h));detail.style.setProperty('--page-clip-radius',mix(9,2,t)+'px');detail.style.setProperty('--reveal',String(t));
+ detail.style.setProperty('--page-scale-x',String(scale));detail.style.setProperty('--page-scale-y',String(scale));detail.style.setProperty('--page-clip-radius',mix(4,2,t)+'px');detail.style.setProperty('--reveal',String(ease(clamp((u-.65)/.35))));
  detail.classList.add('morphing','content-ready');detail.classList.toggle('visible',phase==='detail');
 }
 async function openFromTree(i,tree){
  if(treeOpening||treeReturn||i<0||!['intro','explore'].includes(phase))return;
  treeOpening=true;const b=tree.querySelector('.project-tree-layers').getBoundingClientRect(),from=phase;
  treeReturn={phase:from,tree,origin:{x:b.left+b.width/2,y:b.top+b.height*.48,w:b.width,h:b.height}};
- tree.classList.add('tree-chosen');scene.classList.add('tree-route');drag=null;velocity=0;wheelAt=0;
+ drag=null;velocity=0;wheelAt=0;
  try{await open(i)}finally{treeOpening=false}
 }
 async function open(i,restore=null){
@@ -717,6 +721,7 @@ async function open(i,restore=null){
  const ph=$('placeholder');ph.replaceChildren();
  if(hasPages){raonSlideIndex=pageIndex;const img=$('raonSlide');if(loaded){img.alt=readerTitle+' 포트폴리오 '+(pageIndex+1)+' / '+pages.length+' 페이지';img.style.visibility='visible';detail.classList.add('slide-loaded');updatePageNav();warmPages(pageIndex)}else renderRaonSlide();}
  else if(p.url){const link=document.createElement('a');link.href=p.url;link.textContent='View project';ph.append(link);}
+ if(treeReturn){treeReturn.tree?.classList.add('tree-chosen');scene.classList.add('tree-route')}
  openedAt=performance.now();if(restore){setPhase('detail');if(treeReturn)renderTreePanel(m,1);else renderPanel(m,1);detail.setAttribute('aria-hidden','false')}else setPhase('opening');
 }
 function close(){
