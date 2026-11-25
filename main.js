@@ -63,15 +63,17 @@ if(forest){
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
   // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
   const t=ease(clamp((W/H-.60)/1.05));
-  const portrait=[{x:.19,y:.74,h:.35,alpha:.66,tilt:-2.5},{x:.32,y:.31,h:.17,alpha:.30,tilt:1.5},{x:.83,y:.51,h:.27,alpha:.47,tilt:2},{x:.73,y:.92,h:.20,alpha:.39,tilt:-1.5}];
-  const landscape=[{x:.14,y:.84,h:.62,alpha:.66,tilt:-2.5},{x:.29,y:.51,h:.30,alpha:.30,tilt:1.5},{x:.84,y:.64,h:.43,alpha:.47,tilt:2},{x:.72,y:.91,h:.29,alpha:.39,tilt:-1.5}];
+  const portrait=[{x:.19,y:.74,h:.35,alpha:.66},{x:.32,y:.31,h:.22,alpha:.30},{x:.83,y:.51,h:.27,alpha:.47},{x:.73,y:.92,h:.24,alpha:.39}];
+  const landscape=[{x:.14,y:.84,h:.62,alpha:.66},{x:.29,y:.51,h:.35,alpha:.30},{x:.84,y:.64,h:.43,alpha:.47},{x:.72,y:.91,h:.34,alpha:.39}];
   trees.forEach((tree,i)=>{
-   const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38,tilt:0};
+   const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38};
    const p=portrait[i]||fallback,l=landscape[i]||fallback;
    const height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192);
    const scale=height/362,half=height*96/362+height*.025;
    const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
-   tree.setAttribute('transform','translate('+x+' '+y+') rotate('+mix(p.tilt,l.tilt,t)+') scale('+scale+') translate(-96 -362)');
+   tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
+   // Keep the baseline 22 screen pixels below each tree base at every size.
+   const label=tree.querySelector('.tree-label');if(label)label.setAttribute('y',String(362+22/scale));
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
   });
  }
