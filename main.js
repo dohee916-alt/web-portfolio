@@ -605,7 +605,14 @@ function turnPaper(canvas,front,back,direction,epoch){
   if(Math.abs(det)<1e-9)return;
   const X=d1[0]-d0[0],Y=d1[1]-d0[1],U=d2[0]-d0[0],V=d2[1]-d0[1];
   const A=(X*by-U*ay)/det,B=(Y*by-V*ay)/det,C=(U*ax-X*bx)/det,D=(V*ax-Y*bx)/det;
-  g.save();g.beginPath();g.moveTo(...d0);g.lineTo(...d1);g.lineTo(...d2);g.closePath();g.clip();
+  // Expand only the texture sampling triangles, then clip the entire sheet once.
+  // This covers subpixel antialias gaps without drawing outside the paper.
+  const points=[d0,d1,d2],cx=(d0[0]+d1[0]+d2[0])/3,cy=(d0[1]+d1[1]+d2[1])/3;
+  const expanded=points.map(p=>{const dx=p[0]-cx,dy=p[1]-cy,k=1+1.5/Math.max(.01,Math.hypot(dx,dy));return [cx+dx*k,cy+dy*k]});
+  // Use offset edge lines rather than radial expansion for narrow triangles.
+  const edges=points.map((p,i)=>{const q=points[(i+1)%3],dx=q[0]-p[0],dy=q[1]-p[1],len=Math.hypot(dx,dy)||1;let nx=-dy/len,ny=dx/len;if((cx-p[0])*nx+(cy-p[1])*ny>0){nx=-nx;ny=-ny}return {x:p[0]+nx*.85,y:p[1]+ny*.85,dx,dy}});
+  const clip=edges.map((e,i)=>{const f=edges[(i+2)%3],den=e.dx*f.dy-e.dy*f.dx;if(Math.abs(den)<1e-8)return expanded[i];const t=((f.x-e.x)*f.dy-(f.y-e.y)*f.dx)/den;return [e.x+e.dx*t,e.y+e.dy*t]});
+  g.save();g.beginPath();g.moveTo(...clip[0]);g.lineTo(...clip[1]);g.lineTo(...clip[2]);g.closePath();g.clip();
   g.transform(A,B,C,D,d0[0]-A*s0[0]-C*s0[1],d0[1]-B*s0[0]-D*s0[1]);g.drawImage(img,0,0);g.restore();
  }
  return new Promise(resolve=>{
@@ -627,6 +634,10 @@ function turnPaper(canvas,front,back,direction,epoch){
    // Paint the turning sheet over the already decoded next page.
    const strips=Array.from({length:N},(_,j)=>j).sort((a,b)=>nodes[a].z+nodes[a+1].z-nodes[b].z-nodes[b+1].z);
    g.globalAlpha=1;
+   g.save();g.beginPath();
+   // Union of the quadrilaterals: consistent winding even as the sheet curls.
+   for(let j=0;j<N;j++){let poly=[nodes[j].top,nodes[j+1].top,nodes[j+1].bottom,nodes[j].bottom];let area=0;for(let k=0;k<4;k++){const a=poly[k],b=poly[(k+1)%4];area+=a[0]*b[1]-b[0]*a[1]}if(area<0)poly.reverse();g.moveTo(...poly[0]);for(let k=1;k<4;k++)g.lineTo(...poly[k]);g.closePath()}
+   g.clip();
    for(const j of strips){
     const a=nodes[j],b=nodes[j+1],face=b.x-a.x>=0;
     const img=front,sw=img.naturalWidth,sh=img.naturalHeight;
@@ -637,10 +648,15 @@ function turnPaper(canvas,front,back,direction,epoch){
     }else{
      g.fillStyle='#eee9d9';g.beginPath();g.moveTo(...a.top);g.lineTo(...b.top);g.lineTo(...b.bottom);g.lineTo(...a.bottom);g.closePath();g.fill();
     }
-    const shade=Math.min(.23,Math.abs(b.z-a.z)/(W/N)*.16);
-    g.fillStyle='rgba(30,42,32,'+shade+')';g.beginPath();g.moveTo(...a.top);g.lineTo(...b.top);g.lineTo(...b.bottom);g.lineTo(...a.bottom);g.closePath();g.fill();
    }
-   g.globalAlpha=1;
+   // A single continuous gradient over the sheet avoids individual strip shadows.
+   const x0=Math.min(...nodes.map(n=>n.top[0])),x1=Math.max(...nodes.map(n=>n.top[0]));
+   if(x1-x0>.01){
+    const shade=g.createLinearGradient(x0,0,x1,0);
+    for(let j=0;j<=16;j++){const u=j/16,angle=Math.PI*.5*q+bend*radius*(u-.5);shade.addColorStop(u,'rgba(30,42,32,'+Math.min(.23,Math.abs(Math.sin(angle))*.16)+')')}
+    g.fillStyle=shade;g.fillRect(-pad,-pad,W+2*pad,H+2*pad);
+   }
+   g.restore();g.globalAlpha=1;
    if(t<1)requestAnimationFrame(frameTurn);else resolve(true);
   }
   requestAnimationFrame(frameTurn);
