@@ -221,7 +221,7 @@ header>span,header #fold,header #foldEdge,#scene #nav,#scene #nav button,#layers
 #layers .anchor.active:before,#scene[data-phase=explore] .anchor.active:before{filter:drop-shadow(0 0 3px #eac6a75c)}
 #scene[data-phase=explore] .anchor:not(.active){opacity:.88}
 #layers .anchor span{opacity:.86}
-header #fold svg,header #fold:hover svg,header #foldEdge svg{stroke:var(--gallery-ivory)}
+header #fold svg,header #fold:hover svg,header #foldEdge svg{stroke:var(--gallery-ivory);stroke-opacity:.78;stroke-width:1.2631579}
 header #fold.mobile-fold,header #fold.mobile-fold:hover,header #fold.mobile-fold:active{color:var(--gallery-ivory)}
 header #fold:focus-visible,header #foldEdge:focus-visible,#scene #nav button:focus-visible{outline:2px solid var(--gallery-ivory);outline-offset:3px}
 
