@@ -127,27 +127,29 @@ if(forest){
   const W=scene.clientWidth,H=scene.clientHeight;
   if(!W||!H)return;
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
-  // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
+  // Desktop retains the original forest composition, including narrow browser windows.
   const t=ease(clamp((W/H-.60)/1.05));
-  const portrait=[{x:.18,y:.78,h:.28,alpha:.80},{x:.32,y:.31,h:.22,alpha:.80},{x:.83,y:.51,h:.27,alpha:.80},{x:.73,y:.92,h:.24,alpha:.80}];
+  const portrait=[{x:.19,y:.74,h:.35,alpha:.80},{x:.32,y:.31,h:.22,alpha:.80},{x:.83,y:.51,h:.27,alpha:.80},{x:.73,y:.92,h:.24,alpha:.80}];
   const landscape=[{x:.14,y:.84,h:.62,alpha:.80},{x:.29,y:.51,h:.35,alpha:.80},{x:.84,y:.64,h:.43,alpha:.80},{x:.72,y:.91,h:.34,alpha:.80}];
-  const k=forestCompact(W,H),stackHalf=introPaperWidth(W,H)*1.15/2,stackHalfH=stackHalf*9.5/7;
-  const top=H/2-stackHalfH,bottom=H/2+stackHalfH,sideRoom=Math.max(18,W/2-stackHalf-19),sideHeight=sideRoom*362/192;
-  const upperY=top-30,lowerY=H-32,upperRoom=upperY-55,lowerRoom=lowerY-bottom-12;
-  const tall=H/W>1.15&&upperRoom>=58&&lowerRoom>=65;
+  // Touch portrait uses its vertical space rather than four equally narrow side columns.
+  const phone=matchMedia('(hover:none) and (pointer:coarse)').matches&&W/H<1;
+  const stackHalf=introPaperWidth(W,H)*1.15/2,stackHalfH=stackHalf*9.5/7,top=H/2-stackHalfH;
+  const phoneSlots=[
+   {x:.20,y:.79,h:.34,maxW:.34},
+   {x:.36,y:(top-43)/H,h:.21,maxW:.27},
+   {x:.85,y:.54,h:.26,maxW:.27},
+   {x:.71,y:.94,h:.30,maxW:.37}
+  ];
   trees.forEach((tree,i)=>{
    const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38};
-   const p=portrait[i]||fallback,l=landscape[i]||fallback;
-   const baseHeight=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192);
-   const left=i===0||i===1;
-   const compactHeights=tall?[Math.min(H*.31,sideHeight*.99),Math.min(H*.155,upperRoom,W*.34*362/192),Math.min(H*.22,sideHeight*.72),Math.min(H*.255,lowerRoom,W*.37*362/192)]:[Math.min(H*.38,sideHeight*.98),Math.min(H*.22,sideHeight*.69),Math.min(H*.30,sideHeight*.85),Math.min(H*.19,sideHeight*.56)];
-   const compactH=Math.max(25,compactHeights[i]||Math.min(baseHeight,sideHeight*.65));
-   const compactHalf=compactH*104/362;
-   const sideX=left?clamp(i===0?W*.14:W*.23,compactHalf+7,Math.max(compactHalf+7,W/2-stackHalf-compactHalf-7)):clamp(i===2?W*.86:W*.77,Math.min(W-compactHalf-7,W/2+stackHalf+compactHalf+7),W-compactHalf-7);
-   const compactX=tall&&i===1?W*.33:tall&&i===3?W*.69:sideX;
-   const compactY=tall?[H*.79,upperY,H*.53,lowerY][i]||H*.85:[H*.86,H*.37,H*.59,H*.91][i]||H*.8;
-   const height=mix(baseHeight,compactH,k),scale=height/362,half=height*104/362;
-   const x=clamp(mix(W*mix(p.x,l.x,t),compactX,k),half+7,W-half-7),y=clamp(mix(H*mix(p.y,l.y,t),compactY,k),Math.min(H-25,height+48),H-25);
+   const p=portrait[i]||fallback,l=landscape[i]||fallback,q=phoneSlots[i];
+   let height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192),desiredX=W*mix(p.x,l.x,t),desiredY=H*mix(p.y,l.y,t);
+   if(phone&&q){
+    desiredY=H*q.y;desiredX=W*q.x;
+    height=Math.min(H*q.h,W*q.maxW*362/192,Math.max(40,desiredY-46));
+   }
+   const scale=height/362,half=height*96/362+height*.025;
+   const x=clamp(desiredX,half+8,W-half-8),y=clamp(desiredY,Math.min(H-25,height+42),H-25);
    tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
    tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);tree.querySelectorAll('.fallen-fruits image').forEach(img=>sizeCone(img,scale));
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
