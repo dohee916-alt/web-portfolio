@@ -557,3 +557,13 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #layers .anchor b{bottom:calc(100% + 7px)}
 #introForest .fallen-fruits{pointer-events:none}
 #introForest .fallen-fruits image{transform-box:fill-box;transform-origin:center;opacity:.84}
+
+/* Reference magnolia: long, narrow ivory tepals, irregular radial layering; preserve five-stage growth. */
+#sproutFlower .magnolia-petal{transform-origin:120px 43px;transform:rotate(calc(var(--petal-angle)*-.20)) scale(.18);opacity:0;transition:transform 1.15s cubic-bezier(.16,.7,.2,1),opacity .75s ease;transition-delay:var(--petal-delay)}
+#seedStage[data-bloom="2"] .magnolia-outer{transform:rotate(calc(var(--petal-angle)*-.14)) scale(.42);opacity:.78}
+#seedStage[data-bloom="3"] .magnolia-outer{transform:rotate(calc(var(--petal-angle)*-.07)) scale(.70);opacity:1}
+#seedStage[data-bloom="3"] .magnolia-inner{transform:scale(.48);opacity:.86}
+#seedStage[data-bloom="4"] .magnolia-outer{transform:scale(.90);opacity:1}
+#seedStage[data-bloom="4"] .magnolia-inner{transform:scale(.78);opacity:1}
+#seedStage[data-bloom="5"] .magnolia-petal{transform:scale(1);opacity:1}
+#contactBloom[data-growth=grown] #seedStage:is([data-bloom="2"],[data-bloom="3"],[data-bloom="4"],[data-bloom="5"]) #sproutFlower .flower-petal{pointer-events:visiblePainted;cursor:pointer}
