@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=responsive-seed-scale"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=leaf-material-1"></head>
 <body><header><span>FOLI:ON</span><button id="fold" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="foldEdge" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="contactOpen" type="button">Contact</button></header>
 <main id="scene" data-phase="intro" aria-label="Interactive portfolio"><div class="heading" hidden aria-hidden="true"><p id="eyebrow">01 / LAYERS</p><h1 id="headline">Layers of experience.</h1><p id="hint">스크롤하여 레이어를 펼치세요.</p></div>
 <p id="stillGrowing">Still growing...</p>
@@ -43,11 +43,31 @@
   <feComposite in="dark" in2="innerEdge" operator="in" result="bevelDark"/>
   <feMerge><feMergeNode in="bevelLight"/><feMergeNode in="SourceGraphic"/><feMergeNode in="bevelDark"/></feMerge>
  </filter>
- <linearGradient id="contactLeafColor" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#a9bd90"/><stop offset=".53" stop-color="#c9d3a9"/><stop offset="1" stop-color="#d8dfbd"/></linearGradient></defs>
+ <linearGradient id="contactLeafColor" gradientUnits="userSpaceOnUse" x1="55" y1="270" x2="466" y2="26"><stop stop-color="#a3b78b"/><stop offset=".38" stop-color="#b9ca9e"/><stop offset=".67" stop-color="#cedbb1"/><stop offset="1" stop-color="#dce3c1"/></linearGradient>
+ <linearGradient id="leafUpper" gradientUnits="userSpaceOnUse" x1="218" y1="52" x2="268" y2="154"><stop stop-color="#e8efd0" stop-opacity=".12"/><stop offset=".60" stop-color="#f2f5da" stop-opacity=".38"/><stop offset=".91" stop-color="#80986b" stop-opacity=".12"/><stop offset="1" stop-color="#718c61" stop-opacity=".24"/></linearGradient>
+ <linearGradient id="leafLower" gradientUnits="userSpaceOnUse" x1="268" y1="154" x2="313" y2="268"><stop stop-color="#f6f8dd" stop-opacity=".36"/><stop offset=".20" stop-color="#dce8bd" stop-opacity=".15"/><stop offset=".68" stop-color="#799566" stop-opacity=".18"/><stop offset="1" stop-color="#668357" stop-opacity=".23"/></linearGradient>
+ <radialGradient id="leafLight" gradientUnits="userSpaceOnUse" cx="343" cy="101" r="240" gradientTransform="translate(0 36) scale(1 .64)"><stop stop-color="#f5f8df" stop-opacity=".35"/><stop offset="1" stop-color="#f5f8df" stop-opacity="0"/></radialGradient>
+ <filter id="leafFiber" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".57 .83" numOctaves="3" seed="12" stitchTiles="stitch" result="grain"/><feColorMatrix in="grain" type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".25"/></feComponentTransfer></filter>
+ <filter id="leafMottle" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".018 .032" numOctaves="3" seed="23"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".22"/></feComponentTransfer></filter>
+ <clipPath id="leafSurfaceClip"><use href="#leafOutline"/></clipPath>
+ </defs>
  <path id="leafOutline" d="M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z" fill="url(#contactLeafColor)"/>
- <path d="M8 246 Q253 145 532 52" fill="none" stroke="#f4eedc" stroke-width="1.5" opacity=".35"/>
+ <g clip-path="url(#leafSurfaceClip)" pointer-events="none">
+  <path d="M8 246 L0 0 H540 V52 Q253 145 8 246Z" fill="url(#leafUpper)"/>
+  <path d="M8 246 Q253 145 532 52 L540 300 H0Z" fill="url(#leafLower)"/>
+  <rect width="540" height="300" fill="url(#leafLight)"/>
+  <rect width="540" height="300" filter="url(#leafMottle)" opacity=".32" style="mix-blend-mode:multiply"/>
+  <rect width="540" height="300" filter="url(#leafFiber)" opacity=".48" style="mix-blend-mode:soft-light"/>
+  <g fill="none" stroke="#75915e" stroke-linecap="round" stroke-width=".75" opacity=".19"><path d="M72 220 Q104 167 151 111"/><path d="M111 205 Q144 139 207 76"/><path d="M155 187 Q197 112 263 51"/><path d="M201 170 Q246 100 326 38"/><path d="M249 152 Q309 85 384 34"/><path d="M300 133 Q363 76 432 37"/><path d="M353 114 Q420 62 476 42"/><path d="M408 95 Q461 65 508 48"/><path d="M72 220 Q128 248 183 263"/><path d="M111 205 Q166 237 241 262"/><path d="M155 187 Q218 222 300 250"/><path d="M201 170 Q267 206 357 230"/><path d="M249 152 Q320 185 411 199"/><path d="M300 133 Q367 161 454 164"/><path d="M353 114 Q418 133 486 125"/><path d="M408 95 Q460 104 511 87"/></g>
+  <g fill="none" stroke="#eef4d7" stroke-linecap="round" stroke-width=".55" opacity=".45" transform="translate(0,-.6)"><path d="M72 220 Q104 167 151 111"/><path d="M111 205 Q144 139 207 76"/><path d="M155 187 Q197 112 263 51"/><path d="M201 170 Q246 100 326 38"/><path d="M249 152 Q309 85 384 34"/><path d="M300 133 Q363 76 432 37"/><path d="M353 114 Q420 62 476 42"/><path d="M408 95 Q461 65 508 48"/><path d="M72 220 Q128 248 183 263"/><path d="M111 205 Q166 237 241 262"/><path d="M155 187 Q218 222 300 250"/><path d="M201 170 Q267 206 357 230"/><path d="M249 152 Q320 185 411 199"/><path d="M300 133 Q367 161 454 164"/><path d="M353 114 Q418 133 486 125"/><path d="M408 95 Q460 104 511 87"/></g>
+  <g fill="none" stroke="#829b6e" stroke-width=".4" opacity=".16"><path d="M113 165 Q133 163 157 146"/><path d="M148 145 Q166 142 184 122"/><path d="M191 130 Q214 124 234 104"/><path d="M240 109 Q264 106 288 83"/><path d="M293 91 Q318 87 342 66"/><path d="M348 78 Q370 77 393 58"/><path d="M139 236 Q168 226 184 231"/><path d="M194 225 Q218 216 242 229"/><path d="M252 209 Q278 199 303 212"/><path d="M310 189 Q334 181 360 191"/><path d="M363 166 Q388 157 410 170"/><path d="M414 139 Q436 132 457 141"/></g>
+  <path d="M8 246 Q253 145 532 52" fill="none" stroke="#6b8958" stroke-width="2.8" opacity=".15" transform="translate(0,1)"/>
+  <path d="M8 246 Q253 145 532 52" fill="none" stroke="#eaf0cf" stroke-width="1.45" opacity=".70"/>
+  <use href="#leafOutline" fill="none" stroke="#e7edcc" stroke-width="2" opacity=".64"/>
+ </g>
+ <use href="#leafOutline" fill="none" stroke="#829c6c" stroke-width=".6" opacity=".55"/>
 </svg>
 <div class="contact-copy"><p class="contact-kicker">Contact</p><h2 id="contactTitle"><button type="button" id="contactEmail" aria-label="Copy email address: dohee916@gmail.com">dohee916@gmail.com</button></h2><p id="contactCopyStatus" role="status" aria-live="polite"></p></div>
 </div>
 </dialog>
-<script src="./contact.js?v=copy-email-e485a22"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=curved-unfold-06c2029"></script></body></html>
+<script src="./contact.js?v=copy-email-e485a22"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=leaf-material-label-9"></script></body></html>
