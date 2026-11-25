@@ -636,3 +636,9 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #scene.tree-route:not([data-phase=closing]) #introForest .tree-chosen .fallen-fruits{transform:none;opacity:0;transition:opacity .65s ease}
 #scene.tree-route #detail.portfolio-mode.morphing{opacity:var(--tree-reveal,1);transition:none}
 #scene.tree-route #detail.portfolio-mode.morphing:not(.visible){box-shadow:0 8px 28px #00231620}
+
+/* Device-specific portrait reading; never rotate the website itself. */
+#detail.portfolio-mode.mobile-rotated-reader{transform:rotate(var(--reader-angle,-90deg));transform-origin:center center}
+#detail.portfolio-mode .raon-reader-media{touch-action:none}
+#detail.portfolio-mode .raon-reader-media.page-zoomed{overflow:hidden}
+#detail.portfolio-mode .raon-reader-media #raonSlide{transform-origin:center center}
