@@ -72,6 +72,7 @@ function showFallenFruit(){
   fruitPending[key]=0;
  });
 }
+let updateForestLabels=()=>{};
 if(forest){
  const forestSvg=$('introForest');
  const trees=forestProjects.map((p,i)=>{
@@ -95,6 +96,45 @@ if(forest){
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
   return tree;
  });
+ function placeForestLabels(){
+  const W=scene.clientWidth,H=scene.clientHeight,margin=10;
+  if(!W||!H)return;
+  const avoiding=!!treeReturn&&['opening','detail','closing'].includes(phase);
+  const paper=avoiding?panelTarget(measure()):null,placed=[];
+  for(const tree of trees){
+   const label=tree.querySelector('.tree-label');
+   const s=Number(tree.dataset.treeScale),tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
+   if(!label||!s)continue;
+   const textW=Math.min(W-2*margin,Math.max(25,label.getComputedTextLength()*s)),half=textW/2;
+   const idealX=tx,idealY=ty+22;
+   const cx=x=>Math.max(margin+half,Math.min(W-margin-half,x));
+   const cy=y=>Math.max(25,Math.min(H-12,y));
+   const candidates=[[idealX,idealY]];
+   if(paper){
+    for(const dy of [0,-24,24,-48,48]){
+     candidates.push([paper.x-14-half,idealY+dy],[paper.x+paper.w+14+half,idealY+dy]);
+    }
+    for(const dx of [0,-30,30]){
+     candidates.push([idealX+dx,paper.y-18],[idealX+dx,paper.y+paper.h+26]);
+    }
+   }
+   for(const dy of [-24,24,-48,48])candidates.push([idealX,idealY+dy]);
+   let best=null,score=Infinity;
+   for(const [px,py] of candidates){
+    const x=cx(px),y=cy(py),rect={x:x-half,y:y-13,w:textW,h:17};
+    const cover=paper&&rect.x<paper.x+paper.w+8&&rect.x+rect.w>paper.x-8&&rect.y<paper.y+paper.h+8&&rect.y+rect.h>paper.y-8;
+    const overlap=placed.some(p=>rect.x<p.x+p.w+6&&rect.x+rect.w>p.x-6&&rect.y<p.y+p.h+5&&rect.y+rect.h>p.y-5);
+    const cost=Math.abs(x-idealX)+Math.abs(y-idealY)*.7+(cover?100000:0)+(overlap?50000:0);
+    if(cost<score){score=cost;best={x,y,rect}}
+   }
+   if(best){
+    label.setAttribute('x',String(96+(best.x-tx)/s));
+    label.setAttribute('y',String(362+(best.y-ty)/s));
+    placed.push(best.rect);
+   }
+  }
+ }
+ updateForestLabels=placeForestLabels;
  function layoutForest(){
   const W=scene.clientWidth,H=scene.clientHeight;
   if(!W||!H)return;
@@ -110,10 +150,10 @@ if(forest){
    const scale=height/362,half=height*96/362+height*.025;
    const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
    tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
-   // Keep the baseline 22 screen pixels below each tree base at every size.
-   const label=tree.querySelector('.tree-label');if(label)label.setAttribute('y',String(362+22/scale));
+   tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
   });
+  placeForestLabels();
  }
  layoutForest();
  window.addEventListener('resize',layoutForest,{passive:true});
@@ -409,8 +449,9 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  back.style.setProperty('--back-angle',touchBack?'-90deg':tangent+'deg');
  const edgeBack=$('foldEdge');edgeBack.hidden=!touchBack||!atStart;edgeBack.style.left=(br.left+ba.x)+'px';edgeBack.style.top=(br.top+ba.y+5)+'px';edgeBack.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase)){if(treeReturn)renderTreePanel(m,detailProgress(now));else renderPanel(m,detailProgress(now));}
+ if(treeReturn)updateForestLabels();
  if(phase==='opening'&&now-openedAt>=OPEN_MS){addFruit(items[selected]);setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
- if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');if(treeReturn){const back=treeReturn;treeReturn=null;back.tree?.classList.remove('tree-chosen');scene.classList.remove('tree-route');setPhase(back.phase);$('nav').hidden=back.phase==='intro';}else setPhase('explore')}
+ if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');if(treeReturn){const back=treeReturn;treeReturn=null;back.tree?.classList.remove('tree-chosen');scene.classList.remove('tree-route');setPhase(back.phase);updateForestLabels();$('nav').hidden=back.phase==='intro';}else setPhase('explore')}
  requestAnimationFrame(frame)
 }
 function enterTransition(){
