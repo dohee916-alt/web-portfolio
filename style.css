@@ -217,8 +217,8 @@ header>span,header #fold,header #foldEdge,#scene #nav,#scene #nav button,#layers
 #scene #curve{stroke:var(--gallery-ivory)}
 #scene[data-phase=explore] #curve{stroke-opacity:.78}
 #layers .anchor:before{background:var(--gallery-ivory);border-color:#d7cdb5}
-#layers .anchor.visited:before{background:#dfd6bc;border-color:var(--gallery-ivory)}
-#layers .anchor.active:before,#scene[data-phase=explore] .anchor.active:before{background:var(--gallery-ivory);border-color:#fff9e9;box-shadow:0 0 0 5px rgba(244,238,220,.25)}
+#layers .anchor.visited:before{opacity:1}
+#layers .anchor.active:before,#scene[data-phase=explore] .anchor.active:before{filter:drop-shadow(0 0 3px #eac6a75c)}
 #scene[data-phase=explore] .anchor:not(.active){opacity:.88}
 #layers .anchor span{opacity:.86}
 header #fold svg,header #fold:hover svg,header #foldEdge svg{stroke:var(--gallery-ivory)}
@@ -481,3 +481,7 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #layers .anchor:before{width:16px;height:26px;top:-8px;border:0;border-radius:0;background:transparent url('./assets/spruce-cone.svg') center/contain no-repeat;box-shadow:none}
 #layers .anchor span{bottom:calc(100% + 29px)}
 #layers .anchor b{bottom:calc(100% + 13px)}
+
+/* All anchor states share the cone artwork; legacy circle styles must never replace it. */
+#scene #layers .anchor:before,#scene #layers .anchor.active:before,#scene #layers .anchor.visited:before,#scene #layers .anchor.picked:before{background:transparent url('./assets/spruce-cone.svg') center/contain no-repeat;border:0;border-radius:0;box-shadow:none}
+#scene #layers .anchor.active:before{filter:drop-shadow(0 0 3px #eac6a75c)}
