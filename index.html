@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=return-bud-growth"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — Layers</title><link rel="stylesheet" href="./style.css?v=glowing-seed-copy-bud"></head>
 <body><header><span>FOLI:ON</span><button id="fold" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="foldEdge" type="button" hidden aria-label="처음 화면으로 돌아가기"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6L7 12L17 18"/></svg></button><button id="contactOpen" type="button">Contact</button></header>
 <main id="scene" data-phase="intro" aria-label="Interactive portfolio"><div class="heading" hidden aria-hidden="true"><p id="eyebrow">01 / LAYERS</p><h1 id="headline">Layers of experience.</h1><p id="hint">스크롤하여 레이어를 펼치세요.</p></div>
 <p id="stillGrowing">Still growing...</p>
@@ -8,14 +8,17 @@
 <div id="contactBloom" hidden data-growth="seed">
 <button id="contactSeed" type="button" aria-label="Water the seed to see contact details" aria-expanded="false" aria-controls="bloomInfo"><svg id="seedStage" data-growth="seed" viewBox="0 0 240 190" role="img" aria-label="A seed that sprouts when watered">
 <g fill="#b8ded2"><path class="water-drop" d="M108 25Q98 39 108 42Q118 39 108 25Z"/><path class="water-drop" d="M126 18Q117 31 126 34Q135 31 126 18Z"/><path class="water-drop" d="M139 32Q131 43 139 46Q147 43 139 32Z"/></g>
-<defs><radialGradient id="seedGlow"><stop stop-color="#f4e7b7" stop-opacity=".5"/><stop offset=".45" stop-color="#e4d6a0" stop-opacity=".24"/><stop offset="1" stop-color="#e4d6a0" stop-opacity="0"/></radialGradient></defs>
-<ellipse class="seed-halo" cx="120" cy="139" rx="53" ry="45" fill="url(#seedGlow)"/>
+<defs><radialGradient id="seedGlow"><stop stop-color="#f4e7b7" stop-opacity=".78"/><stop offset=".45" stop-color="#e4d6a0" stop-opacity=".38"/><stop offset="1" stop-color="#e4d6a0" stop-opacity="0"/></radialGradient></defs>
+<defs><radialGradient id="seedCoreGlow"><stop stop-color="#fff8d8" stop-opacity=".95"/><stop offset=".32" stop-color="#f6e8ad" stop-opacity=".65"/><stop offset=".7" stop-color="#e8d69b" stop-opacity=".19"/><stop offset="1" stop-color="#e8d69b" stop-opacity="0"/></radialGradient><radialGradient id="seedSparkGlow"><stop stop-color="#fff8dc"/><stop offset=".3" stop-color="#fff0bb" stop-opacity=".8"/><stop offset="1" stop-color="#f7e5ad" stop-opacity="0"/></radialGradient></defs>
+<ellipse class="seed-halo" cx="120" cy="139" rx="64" ry="54" fill="url(#seedGlow)"/>
+<ellipse class="seed-core-halo" cx="120" cy="139" rx="39" ry="34" fill="url(#seedCoreGlow)"/>
+<g class="seed-sparks"><g class="seed-spark" style="--period:4.2s;--delay:-1.1s;--drift:3px"><circle cx="83" cy="115" r="5" fill="url(#seedSparkGlow)"/><circle cx="83" cy="115" r="1.2" fill="#fff6d1"/></g><g class="seed-spark" style="--period:4.8s;--delay:-2.2s;--drift:-4px"><circle cx="151" cy="111" r="4" fill="url(#seedSparkGlow)"/><circle cx="151" cy="111" r="0.96" fill="#fff6d1"/></g><g class="seed-spark" style="--period:3.9s;--delay:-0.5s;--drift:3px"><circle cx="163" cy="143" r="4.5" fill="url(#seedSparkGlow)"/><circle cx="163" cy="143" r="1.08" fill="#fff6d1"/></g><g class="seed-spark" style="--period:5.1s;--delay:-3s;--drift:-3px"><circle cx="86" cy="153" r="3.5" fill="url(#seedSparkGlow)"/><circle cx="86" cy="153" r="0.84" fill="#fff6d1"/></g><g class="seed-spark" style="--period:4.5s;--delay:-1.8s;--drift:2px"><circle cx="112" cy="94" r="3.8" fill="url(#seedSparkGlow)"/><circle cx="112" cy="94" r="0.9119999999999999" fill="#fff6d1"/></g><g class="seed-spark" style="--period:4.1s;--delay:-2.8s;--drift:-2px"><circle cx="143" cy="169" r="3.3" fill="url(#seedSparkGlow)"/><circle cx="143" cy="169" r="0.7919999999999999" fill="#fff6d1"/></g></g>
 <ellipse cx="120" cy="160" rx="38" ry="4" fill="#09291f" opacity=".5"/>
 <path class="sprout-stem" d="M120 148C113 123 125 98 120 58" fill="none" stroke="#c4d2ab" stroke-width="2.5" stroke-linecap="round"/>
 <g id="sproutBudGrowth" aria-hidden="true">
 <path class="bud-stalk" d="M120 58 Q119 51 120 46" pathLength="1" fill="none" stroke="#c4d2ab" stroke-width="2.1" stroke-linecap="round"/>
 <g class="sprout-bud">
-<path d="M120 47 C112 43 108 35 111 27 Q114 21 120 18 Q127 21 130 28 C133 36 128 44 120 47Z" fill="#dedfc4"/>
+<path d="M120 47 C108 44 103 35 107 26 Q112 19 120 16 Q129 19 134 27 C138 36 131 44 120 47Z" fill="#f1e6c8"/>
 <path d="M120 47 Q113 35 120 18 Q126 31 120 47" fill="#c5cdaa" opacity=".82"/>
 <path d="M120 47 Q116 34 111 27 M120 47 Q126 35 130 28" stroke="#f3efd7" stroke-width=".65" fill="none" opacity=".75"/>
 <path d="M120 49 Q111 45 111 38 Q117 40 120 47 Q123 40 130 38 Q128 46 120 49Z" fill="#9eb486"/>
@@ -79,4 +82,4 @@
 <div class="contact-copy"><p class="contact-kicker">Contact</p><h2 id="contactTitle"><button type="button" id="contactEmail" aria-label="Copy email address: dohee916@gmail.com">dohee916@gmail.com</button></h2><p id="contactCopyStatus" role="status" aria-live="polite"></p></div>
 </div>
 </dialog>
-<script src="./contact.js?v=return-bud-growth"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=wide-seed-clearance"></script></body></html>
+<script src="./contact.js?v=glowing-seed-copy-bud"></script><script src="./projects.js?v=dynamic-layers-d6a41aa"></script><script src="./main.js?v=wide-seed-clearance"></script></body></html>
