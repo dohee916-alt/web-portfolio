@@ -439,3 +439,8 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #seedStage.bud-grown .sprout-bud{opacity:1;transform:scale(1)}
 #seedStage.restore-growth *{transition:none!important;animation:none!important}
 @media(prefers-reduced-motion:reduce){#seedStage[data-growth=seed] .seed-halo,#seedStage[data-growth=seed] .seed-core-halo,#seedStage .seed-spark{animation:none!important}}
+
+/* The supplied tree silhouettes are decorative intro scenery, not gallery cards. */
+#introForest{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .55s ease}
+#scene[data-phase=intro] #introForest{opacity:1}
+#scene:not([data-phase=intro]) #introForest{opacity:0}
