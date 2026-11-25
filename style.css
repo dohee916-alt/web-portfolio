@@ -659,3 +659,7 @@ body.reader-fullscreen-active header{visibility:hidden!important}
 #detail.portfolio-mode.reader-fullscreen #raonReader{padding:0!important}
 #detail.portfolio-mode.reader-fullscreen #raonReader .raon-reader-nav{top:auto;bottom:8px;margin:0;padding:2px 8px;border-radius:20px;background:#10141099;color:white;z-index:5}
 #detail.portfolio-mode.reader-fullscreen .raon-reader-media{overflow:hidden}
+
+/* Fullscreen reading: no legacy blue focus rectangle on navigation controls. */
+#detail.portfolio-mode.reader-fullscreen button:focus-visible{outline:none;filter:drop-shadow(0 0 3px #f4eedcaa)}
+#detail.portfolio-mode.reader-fullscreen.arrow-key-reading :focus{outline:none!important;box-shadow:none!important;filter:none!important}
