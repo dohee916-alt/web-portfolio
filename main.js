@@ -11,6 +11,29 @@ const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svg
 futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','middle');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureLabelPath.setAttribute('id','futureLabelCurve');futureLabelPath.setAttribute('fill','none');futureLabelPath.setAttribute('stroke','none');futureLabelPath.setAttribute('aria-hidden','true');futureTextPath.setAttribute('href','#futureLabelCurve');futureTextPath.setAttribute('startOffset','50%');futureTextPath.textContent='More to Unfold';futureText.append(futureTextPath);svg.append(futurePath,futureLabelPath,futureText);
 // Fit the entire forest to the viewport, rather than cropping a fixed wide composition.
 const forest=$('introForestTrees'),forestProjects=items.filter(p=>p.category==='Project');
+const fruitKey='folio-fruit-counts-v1',fruitCounts=Object.create(null),fruitPending=Object.create(null);
+const fruitId=p=>p.id||p.year+'|'+p.title;
+try{const saved=JSON.parse(sessionStorage.getItem(fruitKey)||'{}');for(const p of forestProjects){const k=fruitId(p);fruitCounts[k]=Math.max(0,Math.floor(Number(saved[k])||0))}}catch(e){}
+function addFruit(p){
+ if(!p||p.category!=='Project')return;
+ const k=fruitId(p);fruitCounts[k]=(fruitCounts[k]||0)+1;fruitPending[k]=(fruitPending[k]||0)+1;
+ try{sessionStorage.setItem(fruitKey,JSON.stringify(fruitCounts))}catch(e){}
+}
+function showFallenFruit(){
+ if(!forest)return;
+ forest.querySelectorAll('.project-tree').forEach((tree,i)=>{
+  const key=fruitId(forestProjects[i]),group=tree.querySelector('.fallen-fruits'),count=fruitCounts[key]||0,pending=fruitPending[key]||0;
+  if(!group)return;
+  for(let j=group.children.length;j<count;j++){
+   const slot=j%13,ring=Math.floor(j/13),angle=slot*2.399963+ring*.55;
+   const x=96+Math.cos(angle)*(22+slot*3.4),y=365+Math.sin(angle)*9+ring*4;
+   const g=document.createElementNS(svgNS,'g');g.setAttribute('transform','translate('+x+' '+y+') rotate('+((j*67%140)-70)+')');
+   const img=document.createElementNS(svgNS,'image');img.setAttribute('href','./assets/spruce-cone.svg?v=bracts-v2');img.setAttribute('x','-5');img.setAttribute('y','-9');img.setAttribute('width','10');img.setAttribute('height','17');g.append(img);group.append(g);
+   if(j>=count-pending&&!reduced){img.animate([{transform:'translateY(-90px) rotate(-24deg)',opacity:0},{transform:'translateY(-75px) rotate(-12deg)',opacity:1,offset:.17},{transform:'translateY(0) rotate(0deg)',opacity:1,offset:.82},{transform:'translateY(-3px)',opacity:1,offset:.91},{transform:'translateY(0)',opacity:1}],{duration:850,delay:(j-count+pending)*100,easing:'cubic-bezier(.45,.06,.75,1)'})}
+  }
+  fruitPending[key]=0;
+ });
+}
 if(forest){
  const forestSvg=$('introForest');
  const trees=forestProjects.map((p,i)=>{
@@ -28,7 +51,7 @@ if(forest){
   const label=document.createElementNS(svgNS,'text');label.classList.add('tree-label');label.setAttribute('x','98');label.setAttribute('y','384');label.setAttribute('text-anchor','middle');label.textContent=p.title;
   const hit=document.createElementNS(svgNS,'path');hit.classList.add('tree-hit');
   hit.setAttribute('d','M96 0 L124 70 L155 135 L181 210 L200 325 L140 350 L110 362 L83 362 L50 350 L-8 325 L12 210 L38 135 L68 70Z');
-  tree.append(layers,label,hit);forest.append(tree);
+  const fruits=document.createElementNS(svgNS,'g');fruits.classList.add('fallen-fruits');fruits.setAttribute('aria-hidden','true');tree.append(layers,fruits,label,hit);forest.append(tree);
   const activate=e=>{e.stopPropagation();if(phase==='intro'||phase==='explore')openFromTree(items.indexOf(p),tree)};
   tree.addEventListener('click',activate);tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}});
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
@@ -58,7 +81,7 @@ if(forest){
 }
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
-function setPhase(p){phase=p;scene.dataset.phase=p;$('foldEdge').hidden=true;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
+function setPhase(p){phase=p;scene.dataset.phase=p;if(p==='intro')showFallenFruit();$('foldEdge').hidden=true;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
 items.forEach((p,i)=>{
  const card=document.createElement('button');card.className='layer';card.type='button';card.disabled=true;card.setAttribute('aria-label',p.title);card.style.setProperty('--color',p.color);
  const shell=document.createElement('div');shell.className='sheet';const strips=[];
@@ -195,9 +218,8 @@ function flight(u,m){
  const sign=impactAnchor.x>m.W*.80?-1:1;
  return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s};
 }
-// Cone SVG painted bottom: approximately y=47 of its 49-unit viewBox.
-// The CSS icon is 26px high, centered at anchor y+5; use its lower tip, including squash.
-function coneBottom(u){const stretch=u>=HIT?1+.06*Math.sin(Math.PI*clamp((u-HIT)/.12)):1;return (47/49-.5)*26*stretch}
+// Contact uses the restored circle radius, including squash.
+function circleBottom(u){const stretch=u>=HIT?1+.06*Math.sin(Math.PI*clamp((u-HIT)/.12)):1;return 7*stretch}
 function currentDot(u,m){return flight(u,m)}
 // Codrops 3DStackMotion: coherent group orientation and successive depth offsets.
  // Keep the planes parallel, like the supplied blue bank-card reference.
@@ -270,16 +292,16 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
     const u=detailProgress(now),hit=impactAnchor||anchorAt(selected,m);
     if(i===selected){
      const start=impactPose||p;
-     const contact=alignTop({...start},m,i,hit.x,hit.y+5+coneBottom(HIT));
+     const contact=alignTop({...start},m,i,hit.x,hit.y+5+circleBottom(HIT));
      const release=HIT+(PUSH-HIT)*.56;
      const pushedDot=flight(release,m);
-     const pushed=alignTop({...contact},m,i,pushedDot.x,pushedDot.y+coneBottom(release));
+     const pushed=alignTop({...contact},m,i,pushedDot.x,pushedDot.y+circleBottom(release));
      if(u<HIT){
       const q=clamp(u/HIT);p=between(start,contact,ease(q));
      }else if(u<=release){
       // The paper edge stays in contact with the underside of the moving dot.
       const dot=flight(u,m);
-      p=alignTop({...contact},m,i,dot.x,dot.y+coneBottom(u));
+      p=alignTop({...contact},m,i,dot.x,dot.y+circleBottom(u));
      }else{
       // Only after the shared push does the paper peel away.
       const t=clamp((u-release)/(1-release)),q=ease(t);
@@ -347,7 +369,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  back.style.setProperty('--back-angle',touchBack?'-90deg':tangent+'deg');
  const edgeBack=$('foldEdge');edgeBack.hidden=!touchBack||!atStart;edgeBack.style.left=(br.left+ba.x)+'px';edgeBack.style.top=(br.top+ba.y+5)+'px';edgeBack.style.setProperty('--back-angle',tangent+'deg');$('counter').textContent=(Math.max(0,Math.round(focus)+1))+' / '+N;$('prev').disabled=target<=-1;$('next').disabled=target>=N-1;
  if(selected>=0&&['opening','detail','closing'].includes(phase)){if(treeReturn)renderTreePanel(m,detailProgress(now));else renderPanel(m,detailProgress(now));}
- if(phase==='opening'&&now-openedAt>=OPEN_MS){setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
+ if(phase==='opening'&&now-openedAt>=OPEN_MS){addFruit(items[selected]);setPhase('detail');detail.classList.add('visible');detail.setAttribute('aria-hidden','false')}
  if(phase==='closing'&&now-closingAt>=CLOSE_MS){target=Math.round(focus);selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('morphing','visible','content-ready');if(treeReturn){const back=treeReturn;treeReturn=null;back.tree?.classList.remove('tree-chosen');scene.classList.remove('tree-route');setPhase(back.phase);$('nav').hidden=back.phase==='intro';}else setPhase('explore')}
  requestAnimationFrame(frame)
 }
