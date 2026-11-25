@@ -395,8 +395,8 @@ function archivePose(i,m,f=focus,amount=1){
 }
 const actualMobileReader=()=>navigator.maxTouchPoints>0&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 function panelTarget(m){
- const W=m.W,H=m.viewportH,rotated=actualMobileReader()&&detail.classList.contains('has-slides')&&H>W;
- const pad=clamp(W*.018,8,22),iw=rotated?Math.min(H*.86-2*pad,(W*.82-2*pad)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
+ const W=m.W,H=m.viewportH,rotated=actualMobileReader()&&detail.classList.contains('has-slides');
+ const pad=clamp(W*.018,8,22),iw=rotated?Math.min(H*.86-2*pad,(W*.76-2*pad)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9),w=iw+2*pad,h=iw*9/16+2*pad;
  detail.classList.toggle('mobile-rotated-reader',rotated);
  return {x:(W-w)/2,y:(H-h)/2,w,h,pad,rotated};
 }
