@@ -195,6 +195,9 @@ function flight(u,m){
  const sign=impactAnchor.x>m.W*.80?-1:1;
  return {x:impactAnchor.x+sign*dx*s,y:y0-rise*s};
 }
+// Cone SVG painted bottom: approximately y=47 of its 49-unit viewBox.
+// The CSS icon is 26px high, centered at anchor y+5; use its lower tip, including squash.
+function coneBottom(u){const stretch=u>=HIT?1+.06*Math.sin(Math.PI*clamp((u-HIT)/.12)):1;return (47/49-.5)*26*stretch}
 function currentDot(u,m){return flight(u,m)}
 // Codrops 3DStackMotion: coherent group orientation and successive depth offsets.
  // Keep the planes parallel, like the supplied blue bank-card reference.
@@ -267,16 +270,16 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
     const u=detailProgress(now),hit=impactAnchor||anchorAt(selected,m);
     if(i===selected){
      const start=impactPose||p;
-     const contact=alignTop({...start},m,i,hit.x,hit.y+12);
+     const contact=alignTop({...start},m,i,hit.x,hit.y+5+coneBottom(HIT));
      const release=HIT+(PUSH-HIT)*.56;
      const pushedDot=flight(release,m);
-     const pushed=alignTop({...contact},m,i,pushedDot.x,pushedDot.y+7);
+     const pushed=alignTop({...contact},m,i,pushedDot.x,pushedDot.y+coneBottom(release));
      if(u<HIT){
       const q=clamp(u/HIT);p=between(start,contact,ease(q));
      }else if(u<=release){
       // The paper edge stays in contact with the underside of the moving dot.
       const dot=flight(u,m);
-      p=alignTop({...contact},m,i,dot.x,dot.y+7);
+      p=alignTop({...contact},m,i,dot.x,dot.y+coneBottom(u));
      }else{
       // Only after the shared push does the paper peel away.
       const t=clamp((u-release)/(1-release)),q=ease(t);
