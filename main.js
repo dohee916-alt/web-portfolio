@@ -275,8 +275,8 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
  const seedEntry=$('contactBloom');if(seedEntry){seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=(endX-36)+'px';seedEntry.style.top=(endY+m.topInset+38)+'px';seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(1+.30*clamp((m.W-600)/1000)));}
- // Letter baselines follow the same quadratic curve, 19px above the dotted track.
- futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-14)+' Q '+midFuture+' '+(controlY-14)+' '+endX+' '+(endY-14):'');
+ // Letter baselines follow the same quadratic curve, 10px above the dotted track.
+ futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+midFuture+' '+(controlY-5)+' '+endX+' '+(endY-5):'');
  futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
