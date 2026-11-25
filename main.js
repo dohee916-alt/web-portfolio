@@ -123,7 +123,7 @@ if(forest){
   labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
   const growing=$('stillGrowing').getBoundingClientRect(),sr=scene.getBoundingClientRect();
   const title={left:growing.left-sr.left,right:growing.right-sr.left,top:card.top-29,bottom:card.top-7};
-  const obstacles=[card,title],placed=[];
+  const obstacles=[card],placed=[];
   trees.forEach((tree,i)=>{
    const label=labels[i],bx=Number(tree.dataset.baseX),by=Number(tree.dataset.baseY),s=Number(tree.dataset.treeScale);
    if(!label||!s||!Number.isFinite(bx)||!Number.isFinite(by))return;
@@ -441,9 +441,9 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  if(phase==='intro'){
   const vertices=silhouettes.flatMap(s=>s.poly);
   const top=Math.min(...vertices.map(v=>v[1])),left=Math.min(...vertices.map(v=>v[0])),right=Math.max(...vertices.map(v=>v[0]));
-  growing.style.left=((left+right)/2)+'px';
-  growing.style.top=(top+m.topInset-8)+'px'; // Eight pixels above the actual projected upper edge.
   const bottom=Math.max(...vertices.map(v=>v[1]));
+  growing.style.left=(right-12)+'px';
+  growing.style.top=(bottom+m.topInset-12)+'px';
   updateForestLabels({left,right,top:top+m.topInset,bottom:bottom+m.topInset});
  }
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
