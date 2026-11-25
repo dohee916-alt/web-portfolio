@@ -274,7 +274,19 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  const futureVisible=futureFade>0&&endX>startX+24;
  futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
- const seedEntry=$('contactBloom');if(seedEntry){seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=(endX-36)+'px';seedEntry.style.top=(endY+m.topInset+38+30*clamp((m.W-600)/1000))+'px';seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(1+.30*clamp((m.W-600)/1000)));}
+ const seedEntry=$('contactBloom');if(seedEntry){
+  const seedScale=1+.30*clamp((m.W-600)/1000);
+  const seedRight=endX-36;
+  // SVG is 120x95 for a 240x190 viewBox. Its transformed centerline
+  // is 15px left of the entry right edge, and its 84% pivot is 35px below entry top.
+  // The bud center (120,31) is 64.3 CSS px above that pivot at scale 1.
+  const budX=seedRight-15;
+  const budTrackY=trackY(budX,m)+5+m.topInset;
+  const budCenterOffset=2*seedScale;
+  const seedTop=budTrackY+budCenterOffset-35+64.3*seedScale;
+  seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=seedRight+'px';seedEntry.style.top=seedTop+'px';
+  seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(seedScale));
+ }
  // Letter baselines follow the same quadratic curve, 10px above the dotted track.
  futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+midFuture+' '+(controlY-5)+' '+endX+' '+(endY-5):'');
  futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
