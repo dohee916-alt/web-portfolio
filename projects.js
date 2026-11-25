@@ -43,12 +43,12 @@ window.PROJECTS = [
     "year": "2025",
     "title": "라온이음",
     "pages": [
-      "./assets/raon/1.jpg",
-      "./assets/raon/2.jpg",
-      "./assets/raon/3.jpg",
-      "./assets/raon/4.jpg",
-      "./assets/raon/5.jpg",
-      "./assets/raon/6.jpg"
+      "./assets/raon/1.jpg?v=4k-20261125",
+      "./assets/raon/2.jpg?v=4k-20261125",
+      "./assets/raon/3.jpg?v=4k-20261125",
+      "./assets/raon/4.jpg?v=4k-20261125",
+      "./assets/raon/5.jpg?v=4k-20261125",
+      "./assets/raon/6.jpg?v=4k-20261125"
     ],
     "category": "Project",
     "description": "아빠와 아이의 감정 대화를 돕기 위해 단계별 대화 가이드와 빛·소리로 반응하는 실물 인형을 설계하고 구현했다.",
