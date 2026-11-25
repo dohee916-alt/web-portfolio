@@ -476,3 +476,8 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #introForest .tree-hit{pointer-events:none;fill:transparent;stroke:none}
 #scene[data-phase=intro]:not(.tree-route) #introForest .tree-hit{pointer-events:all;cursor:pointer}
 #scene[data-phase=intro]:not(.tree-route) #introForest .tree-layer{pointer-events:none}
+
+/* Young spruce cone trial: retain existing anchor center and collision point. */
+#layers .anchor:before{width:16px;height:26px;top:-8px;border:0;border-radius:0;background:transparent url('./assets/spruce-cone.svg') center/contain no-repeat;box-shadow:none}
+#layers .anchor span{bottom:calc(100% + 29px)}
+#layers .anchor b{bottom:calc(100% + 13px)}
