@@ -4,7 +4,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
 (()=>{
  const dialog=document.getElementById('contactDialog'),openButton=document.getElementById('contactOpen'),seedButton=document.getElementById('contactSeed'),inline=document.getElementById('contactBloom'),stage=document.getElementById('seedStage'),leaf=document.getElementById('detachableLeaf'),surface=document.getElementById('contactLeafSurface'),email=document.getElementById('contactEmail');
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
- let grown=false,copiedEmail=false,bloomLevel=0,timer=0,flight=null;
+ let grown=false,copiedEmail=false,bloomLevel=0,timer=0,flight=null,pendingBloom=false;
  const MAX_BLOOM=5;
  function updateBloom(){
   stage.dataset.bloom=String(bloomLevel);
@@ -99,7 +99,14 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  }
  openButton.addEventListener('click',()=>showContact());
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');if(grown){settlePlant();saveGrowth()}});
+ dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');if(grown){settlePlant();saveGrowth();if(pendingBloom){
+   pendingBloom=false;
+   // Wait for the dialog/backdrop to disappear and the home scene to paint.
+   requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{
+    if(dialog.open){pendingBloom=true;return}
+    growBloom();
+   },160)));
+  }}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
   el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
@@ -109,10 +116,10 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
  }
  seedButton.addEventListener('click',()=>{
   if(dialog.open)return;
-  if(grown){if(stage.dataset.growth==='grown'){growBloom();showContact()}return}
+  if(grown){if(stage.dataset.growth==='grown'){pendingBloom=true;showContact()}return}
   grown=true;inline.dataset.growth='watering';stage.dataset.growth='watering';seedButton.setAttribute('aria-expanded','true');
   timer=setTimeout(()=>{
-   inline.dataset.growth='grown';stage.dataset.growth='grown';growBloom();
+   inline.dataset.growth='grown';stage.dataset.growth='grown';pendingBloom=true;
    const origin=leaf.getBoundingClientRect();
    showContact(inline.hidden?null:origin);
   },reduced()?0:1900);
