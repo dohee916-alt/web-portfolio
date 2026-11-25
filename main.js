@@ -80,6 +80,8 @@ function showFallenFruit(){
 let updateForestLabels=()=>{};
 if(forest){
  const forestSvg=$('introForest');
+ const labelOverlay=document.createElementNS(svgNS,'svg');labelOverlay.id='forestLabelOverlay';labelOverlay.setAttribute('aria-hidden','true');scene.append(labelOverlay);
+ const labels=[];
  const trees=forestProjects.map((p,i)=>{
   const tree=document.createElementNS(svgNS,'g');
   tree.classList.add('project-tree');tree.setAttribute('role','button');tree.setAttribute('tabindex','0');tree.setAttribute('aria-label',p.title);
@@ -95,7 +97,7 @@ if(forest){
   const label=document.createElementNS(svgNS,'text');label.classList.add('tree-label');label.setAttribute('x','98');label.setAttribute('y','384');label.setAttribute('text-anchor','middle');label.textContent=p.title;
   const hit=document.createElementNS(svgNS,'path');hit.classList.add('tree-hit');
   hit.setAttribute('d','M96 0 L124 70 L155 135 L181 210 L200 325 L140 350 L110 362 L83 362 L50 350 L-8 325 L12 210 L38 135 L68 70Z');
-  const fruits=document.createElementNS(svgNS,'g');fruits.classList.add('fallen-fruits');fruits.setAttribute('aria-hidden','true');tree.append(layers,fruits,label,hit);forest.append(tree);
+  const fruits=document.createElementNS(svgNS,'g');fruits.classList.add('fallen-fruits');fruits.setAttribute('aria-hidden','true');tree.append(layers,fruits,hit);forest.append(tree);labelOverlay.append(label);labels.push(label);tree.addEventListener('pointerenter',()=>label.classList.add('label-hover'));tree.addEventListener('pointerleave',()=>label.classList.remove('label-hover'));tree.addEventListener('focus',()=>label.classList.add('label-hover'));tree.addEventListener('blur',()=>label.classList.remove('label-hover'));
   const activate=e=>{e.stopPropagation();if(phase==='intro'||phase==='explore')openFromTree(items.indexOf(p),tree)};
   tree.addEventListener('click',activate);tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}});
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
@@ -104,13 +106,14 @@ if(forest){
  function placeForestLabels(){
   const W=scene.clientWidth,H=scene.clientHeight,margin=10;
   if(!W||!H)return;
-  const avoiding=!!treeReturn&&['opening','detail','closing'].includes(phase);
-  const paper=avoiding?panelTarget(measure()):null,placed=[];
+  labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
+  const introW=Math.min(185,W*.43)*1.15,introH=introW*9.5/7;
+  const paper={x:(W-introW)/2,y:(H-introH)/2-26,w:introW,h:introH+26},placed=[];
   for(const tree of trees){
-   const label=tree.querySelector('.tree-label');
+   const label=labels[trees.indexOf(tree)];
    const s=Number(tree.dataset.treeScale),tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
    if(!label||!s)continue;
-   const textW=Math.min(W-2*margin,Math.max(25,label.getComputedTextLength()*s)),half=textW/2;
+   const textW=Math.min(W-2*margin,Math.max(25,label.getComputedTextLength())),half=textW/2;
    const idealX=tx,idealY=ty+22;
    const cx=x=>Math.max(margin+half,Math.min(W-margin-half,x));
    const cy=y=>Math.max(25,Math.min(H-12,y));
@@ -123,7 +126,7 @@ if(forest){
      candidates.push([idealX+dx,paper.y-18],[idealX+dx,paper.y+paper.h+26]);
     }
    }
-   for(const dy of [-24,24,-48,48])candidates.push([idealX,idealY+dy]);
+   for(const dy of [-24,24,-48,48,-72,72,-96,96])candidates.push([idealX,idealY+dy]);
    let best=null,score=Infinity;
    for(const [px,py] of candidates){
     const x=cx(px),y=cy(py),rect={x:x-half,y:y-13,w:textW,h:17};
@@ -133,8 +136,8 @@ if(forest){
     if(cost<score){score=cost;best={x,y,rect}}
    }
    if(best){
-    label.setAttribute('x',String(96+(best.x-tx)/s));
-    label.setAttribute('y',String(362+(best.y-ty)/s));
+    label.setAttribute('x',String(best.x));
+    label.setAttribute('y',String(best.y));
     placed.push(best.rect);
    }
   }
@@ -161,6 +164,7 @@ if(forest){
   placeForestLabels();
  }
  layoutForest();
+ document.fonts?.ready.then(placeForestLabels);
  window.addEventListener('resize',layoutForest,{passive:true});
  if(typeof ResizeObserver!=='undefined')new ResizeObserver(layoutForest).observe(scene);
 }
