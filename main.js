@@ -253,7 +253,7 @@ scene.addEventListener('click',e=>{if(treeReturn||e.target.closest('.project-tre
 function measure(){
  const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
  // Fixed intro paper size; shrink only to fit a small viewport.
- const w=introPaperWidth(W,V); // Preserve desktop size; reserve side space on compact viewports.
+ const w=Math.min(185,W*.43); // Restore original intro stack size; keep revised forest layout.
  // Layout is determined by the available viewport, not the input device.
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=Math.min(260,W*.43,Math.max(185,W*.19)); // Monotonic width; compact layout changes spacing, not paper size.
