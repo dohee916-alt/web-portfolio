@@ -567,3 +567,9 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #seedStage[data-bloom="4"] .magnolia-inner{transform:scale(.78);opacity:1}
 #seedStage[data-bloom="5"] .magnolia-petal{transform:scale(1);opacity:1}
 #contactBloom[data-growth=grown] #seedStage:is([data-bloom="2"],[data-bloom="3"],[data-bloom="4"],[data-bloom="5"]) #sproutFlower .flower-petal{pointer-events:visiblePainted;cursor:pointer}
+
+/* Lift the opening flower as its stem grows, keeping the original bud alignment. */
+#flowerExtension{opacity:0;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .7s ease,opacity .3s;pointer-events:none}
+#sproutFlower{transform:translateY(0);transition:opacity .28s ease,transform .9s cubic-bezier(.2,.65,.3,1)}
+#seedStage:is([data-bloom="2"],[data-bloom="3"],[data-bloom="4"],[data-bloom="5"]) #flowerExtension{opacity:1;stroke-dashoffset:0;pointer-events:stroke;cursor:pointer}
+#seedStage:is([data-bloom="2"],[data-bloom="3"],[data-bloom="4"],[data-bloom="5"]) #sproutFlower{transform:translateY(-16px)}
