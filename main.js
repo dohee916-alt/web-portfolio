@@ -264,6 +264,40 @@ function paperOutline(s){
  return left.concat(right.reverse());
 }
 function shape(poly){ctx.beginPath();if(poly.length===4){for(let i=0;i<4;i++){const p=poly[(i+3)%4],q=poly[i],r=poly[(i+1)%4],a=Math.min(2.5,Math.hypot(q[0]-p[0],q[1]-p[1])*.035),b=Math.min(2.5,Math.hypot(r[0]-q[0],r[1]-q[1])*.035),da=Math.hypot(q[0]-p[0],q[1]-p[1])||1,db=Math.hypot(r[0]-q[0],r[1]-q[1])||1,x=q[0]+(p[0]-q[0])*a/da,y=q[1]+(p[1]-q[1])*a/da;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.quadraticCurveTo(q[0],q[1],q[0]+(r[0]-q[0])*b/db,q[1]+(r[1]-q[1])*b/db)}}else poly.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath()}
+// Soften the internal overlap seams without blurring the exterior paper silhouette.
+const seamSource=document.createElement('canvas'),seamBlur=document.createElement('canvas');
+const seamSourceCtx=seamSource.getContext('2d'),seamBlurCtx=seamBlur.getContext('2d');
+function softenOverlapSeams(m,dpr,w,h){
+ const sheets=silhouettes.filter(s=>s.p.opacity>.05&&s.L.length===2);
+ if(sheets.length<2)return;
+ const bounds=sheets.map(s=>({s,minX:Math.min(...s.poly.map(v=>v[0])),maxX:Math.max(...s.poly.map(v=>v[0])),minY:Math.min(...s.poly.map(v=>v[1])),maxY:Math.max(...s.poly.map(v=>v[1]))}));
+ const pairs=bounds.map(a=>bounds.filter(b=>a!==b&&a.minX<b.maxX&&a.maxX>b.minX&&a.minY<b.maxY&&a.maxY>b.minY));
+ if(!pairs.some(p=>p.length))return;
+ if(seamSource.width!==w||seamSource.height!==h){seamSource.width=seamBlur.width=w;seamSource.height=seamBlur.height=h}
+ seamSourceCtx.clearRect(0,0,w,h);seamSourceCtx.drawImage(surface,0,0);
+ seamBlurCtx.clearRect(0,0,w,h);
+ // Native filtering where available; a small weighted sample kernel is the mobile fallback.
+ if(typeof seamBlurCtx.filter==='string'){
+  seamBlurCtx.filter='blur('+(1.8*dpr)+'px)';seamBlurCtx.drawImage(seamSource,0,0);seamBlurCtx.filter='none';
+ }else{
+  seamBlurCtx.globalCompositeOperation='lighter';
+  const weights=[1,4,6,4,1];for(let j=0;j<5;j++)for(let i=0;i<5;i++){
+   seamBlurCtx.globalAlpha=weights[i]*weights[j]/256;seamBlurCtx.drawImage(seamSource,(i-2)*1.8*dpr,(j-2)*1.8*dpr);
+  }
+  seamBlurCtx.globalAlpha=1;seamBlurCtx.globalCompositeOperation='source-over';
+ }
+ bounds.forEach((a,i)=>{
+  if(!pairs[i].length)return;
+  ctx.save();sheetPath(a.s);ctx.clip();
+  ctx.beginPath();
+  for(const b of pairs[i])for(let j=0;j<b.s.poly.length;j++){
+   const p=b.s.poly[j],q=b.s.poly[(j+1)%b.s.poly.length],dx=q[0]-p[0],dy=q[1]-p[1],len=Math.hypot(dx,dy)||1,nx=-dy/len*7,ny=dx/len*7;
+   ctx.moveTo(p[0]+nx,p[1]+ny);ctx.lineTo(q[0]+nx,q[1]+ny);ctx.lineTo(q[0]-nx,q[1]-ny);ctx.lineTo(p[0]-nx,p[1]-ny);ctx.closePath();
+  }
+  ctx.clip();ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,w,h);ctx.drawImage(seamBlur,0,0);ctx.restore();
+ });
+}
 function opticalRender(m){
  // Render on the entire scene, not just the lower world layout box.
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.round(m.W*dpr),h=Math.round(m.viewportH*dpr);
@@ -281,6 +315,7 @@ function opticalRender(m){
    // Let the translucent paper fill define its silhouette, without a drawn outline.
    ctx.restore()
  }
+ if(phase==='explore')softenOverlapSeams(m,dpr,w,h);
 }
 function inside(x,y,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 function pick(e){const r=root.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let j=silhouettes.length-1;j>=0;j--){let s=silhouettes[j];if(s.p.opacity>.3&&inside(x,y,s.poly))return s.i}return -1}
