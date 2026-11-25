@@ -396,7 +396,7 @@ function archivePose(i,m,f=focus,amount=1){
 const actualMobileReader=()=>navigator.maxTouchPoints>0&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 let fullReader=false;
 function panelTarget(m){
- const W=m.W,H=m.viewportH,rotated=fullReader&&H>W;
+ const W=m.W,H=m.viewportH,rotated=fullReader&&actualMobileReader()&&H>W;
  const pad=fullReader?0:clamp(W*.018,8,22);
  const iw=fullReader?Math.min(rotated?H:W,(rotated?W:H)*16/9):Math.min(W*(mobile()?.92:.86)-2*pad,(H*.72-2*pad)*16/9);
  const w=iw+2*pad,h=iw*9/16+2*pad;
@@ -752,7 +752,7 @@ function exitReaderFullscreen(){
  nativeReaderFullscreen=false;
 }
 fullButton.addEventListener('click',()=>{
- if(phase!=='detail'||slideBusy||!actualMobileReader())return;
+ if(phase!=='detail'||slideBusy)return;
  if(fullReader){exitReaderFullscreen();return}
  setReaderFullscreen(true);
  // The CSS reading mode works even when the browser cannot enter native fullscreen.
@@ -799,7 +799,7 @@ async function open(i,restore=null){
  target=focus;wheelAt=0;scrollSpeed=0;selected=i;visited.add(i);velocity=0;
  const m=measure();impactPose=restore?archivePose(i,m):{...poses[i]};impactAnchor=anchorAt(i,m);
  ++slideEpoch;slideBusy=false;projectPages=pages;readerTitle=p.title;resetPageZoom();
- detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);fullButton.hidden=!(hasPages&&actualMobileReader());
+ detail.classList.remove('raon-mode');detail.classList.add('portfolio-mode');detail.classList.toggle('has-slides',hasPages);fullButton.hidden=!hasPages;
  const reader=$('raonReader');reader.hidden=!hasPages;reader.setAttribute('aria-label',p.title+' 포트폴리오 '+pages.length+'페이지');detail.classList.remove('slide-loaded');
  $('category').textContent=p.category||'';
  $('projectTitle').textContent=p.title;
