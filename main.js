@@ -26,7 +26,9 @@ if(forest){
    layer.classList.add('tree-layer');layer.style.setProperty('--fan',((j-(sources.length-1)/2)*1.7)+'deg');layer.style.setProperty('--layer-delay',(j*24)+'ms');layers.append(layer);
   });
   const label=document.createElementNS(svgNS,'text');label.classList.add('tree-label');label.setAttribute('x','98');label.setAttribute('y','384');label.setAttribute('text-anchor','middle');label.textContent=p.title;
-  tree.append(layers,label);forest.append(tree);
+  const hit=document.createElementNS(svgNS,'path');hit.classList.add('tree-hit');
+  hit.setAttribute('d','M96 0 L124 70 L155 135 L181 210 L200 325 L140 350 L110 362 L83 362 L50 350 L-8 325 L12 210 L38 135 L68 70Z');
+  tree.append(layers,label,hit);forest.append(tree);
   const activate=e=>{e.stopPropagation();if(phase==='intro'||phase==='explore')openFromTree(items.indexOf(p),tree)};
   tree.addEventListener('click',activate);tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}});
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
