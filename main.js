@@ -7,7 +7,7 @@ const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 const forestCompact=(W,H)=>Math.max(ease(clamp((980-W)/340)),ease(clamp((1.28-W/Math.max(1,H))/.48)));
 const introPaperWidth=(W,H)=>Math.min(185,W*.43);
-function sizeCone(img,s){const w=Math.max(12,10/Math.max(.12,s||.5)),h=w*1.6;img.setAttribute('x',String(-w/2));img.setAttribute('y',String(-h/2));img.setAttribute('width',String(w));img.setAttribute('height',String(h))}
+function sizeCone(img,s){const w=Math.max(12,8.5/Math.max(.12,s||.5)),h=w*1.6;img.setAttribute('x',String(-w/2));img.setAttribute('y',String(-h/2));img.setAttribute('width',String(w));img.setAttribute('height',String(h))}
 let treeReturn=null,treeOpening=false;let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text'),futureLabelPath=document.createElementNS(svgNS,'path'),futureTextPath=document.createElementNS(svgNS,'textPath');
@@ -35,8 +35,8 @@ function showFallenFruit(){
   const landingSites=[];
   for(let k=0;k<24;k++){
    const side=k%2===0?-1:1;
-   const spread=12+random()*38;
-   landingSites.push({x:96+side*spread,y:356-random()*8,turn:side*(58+random()*52)});
+   const spread=12+random()*34;
+   landingSites.push({x:96+side*spread,y:353+random()*12,turn:side*(48+random()*66)});
   }
   // Different branch for each visit; the cone never originates outside the tree.
   const branchSites=[];
@@ -71,7 +71,7 @@ function showFallenFruit(){
      {transform:mid,opacity:1,offset:.49},
      {transform:near,opacity:1,offset:.84},
      {transform:'translate(0px,-3px) rotate(-5deg)',opacity:1,offset:.93},
-     {transform:'translate(0px,0px) rotate(0deg)',opacity:1,offset:1}
+     {transform:'translate(0px,0px) rotate(0deg)',opacity:.88,offset:1}
     ],{duration:1100,delay:240+(j-(count-pending))*130,easing:'cubic-bezier(.38,.05,.28,1)',fill:'backwards'});
     fall.onfinish=()=>fall.cancel();
    }
