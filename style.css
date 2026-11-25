@@ -642,3 +642,20 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #detail.portfolio-mode .raon-reader-media{touch-action:none}
 #detail.portfolio-mode .raon-reader-media.page-zoomed{overflow:hidden}
 #detail.portfolio-mode .raon-reader-media #raonSlide{transform-origin:center center}
+
+/* Optional landscape reading on phones; the ordinary viewer stays unrotated. */
+#detail.portfolio-mode #readerFullscreen{position:absolute;right:40px;top:-42px;width:36px;height:36px;margin:0;padding:8px;display:grid;place-items:center;background:none;border:0;color:var(--gallery-ivory);opacity:0;transform:none;z-index:12;pointer-events:none}
+#detail.portfolio-mode #readerFullscreen[hidden]{display:none!important}
+#detail.portfolio-mode.visible #readerFullscreen{opacity:1;pointer-events:auto}
+#readerFullscreen svg{width:20px;height:20px;display:block}
+#readerFullscreen .exit-fullscreen-icon,#detail.reader-fullscreen #readerFullscreen .enter-fullscreen-icon{display:none}
+#detail.reader-fullscreen #readerFullscreen .exit-fullscreen-icon{display:block}
+body.reader-fullscreen-active::after{content:"";position:fixed;inset:0;background:#101410;z-index:800;pointer-events:none}
+body.reader-fullscreen-active header{visibility:hidden!important}
+#detail.portfolio-mode.reader-fullscreen{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;z-index:2000}
+#detail.reader-fullscreen::before,#detail.reader-fullscreen::after{display:none!important}
+#detail.portfolio-mode.reader-fullscreen #close{display:none!important}
+#detail.portfolio-mode.reader-fullscreen #readerFullscreen{top:8px;right:8px;background:#10141099;color:white;border-radius:6px}
+#detail.portfolio-mode.reader-fullscreen #raonReader{padding:0!important}
+#detail.portfolio-mode.reader-fullscreen #raonReader .raon-reader-nav{top:auto;bottom:8px;margin:0;padding:2px 8px;border-radius:20px;background:#10141099;color:white;z-index:5}
+#detail.portfolio-mode.reader-fullscreen .raon-reader-media{overflow:hidden}
