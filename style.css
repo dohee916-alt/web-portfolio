@@ -562,7 +562,7 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #seedStage .sprout-bud{display:none!important}
 #seedStage #sproutFlower{opacity:0;transform:translateY(0);transition:opacity .25s ease,transform .95s cubic-bezier(.2,.65,.3,1)}
 #sproutFlower .magnolia-petal{transform-box:view-box;transform-origin:120px 43px;transform:rotate(var(--closed-angle)) scale(.40,.78);opacity:1;transition:transform 1.15s cubic-bezier(.16,.7,.2,1);transition-delay:var(--petal-delay)}
-#seedStage[data-bloom="1"] #sproutFlower{opacity:1;transition:opacity .35s .56s ease}
+#seedStage[data-bloom="1"] #sproutFlower{opacity:1;transition:opacity .35s ease .56s,transform .95s cubic-bezier(.2,.65,.3,1)}
 #seedStage[data-bloom="2"] #sproutFlower,#seedStage[data-bloom="3"] #sproutFlower,#seedStage[data-bloom="4"] #sproutFlower,#seedStage[data-bloom="5"] #sproutFlower{opacity:1}
 #seedStage[data-bloom="2"] .magnolia-petal{transform:rotate(var(--opening-angle)) scale(.61,.84)}
 #seedStage[data-bloom="3"] .magnolia-petal{transform:rotate(var(--half-angle)) scale(.80,.93)}
@@ -609,3 +609,10 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #seedStage[data-bloom="7"] .flower-spark{animation:flower-twinkle var(--spark-period,4s) var(--spark-delay,0s) ease-in-out infinite}
 @keyframes flower-twinkle{0%,100%{opacity:.08;transform:translateY(1.5px) scale(.55)}30%{opacity:.3;transform:translateY(0) scale(.8)}49%{opacity:.95;transform:translateY(-2px) scale(1)}68%{opacity:.18;transform:translateY(-3px) scale(.65)}}
 @media(prefers-reduced-motion:reduce){#seedStage[data-bloom="7"] .flower-spark{animation:none;opacity:.65}#flowerSparkles{transition:none!important}}
+
+/* Stable flower visibility across growth stages; only the initial bud fades in. */
+#contactLeafSurface .contact-copy .contact-kicker{position:relative;top:3px}
+#seedStage[data-bloom] #sproutFlower{transition:transform 1.15s cubic-bezier(.22,.65,.3,1),opacity .35s ease}
+#seedStage[data-bloom="1"] #sproutFlower{transition:transform 1.15s cubic-bezier(.22,.65,.3,1),opacity .35s ease .56s}
+#seedStage:is([data-bloom="2"],[data-bloom="3"],[data-bloom="4"],[data-bloom="5"],[data-bloom="6"],[data-bloom="7"]) #sproutFlower{opacity:1}
+@media(prefers-reduced-motion:reduce){#seedStage[data-bloom] #sproutFlower{transition:none!important}}
