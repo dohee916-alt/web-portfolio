@@ -308,7 +308,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   const vertices=silhouettes.flatMap(s=>s.poly);
   const top=Math.min(...vertices.map(v=>v[1])),left=Math.min(...vertices.map(v=>v[0])),right=Math.max(...vertices.map(v=>v[0]));
   growing.style.left=((left+right)/2)+'px';
-  growing.style.top=(m.viewportH*.5-105*(9.5/7)*1.15/2-18)+'px'; // Fixed vertical anchor, independent of viewport width.
+  growing.style.top=(top+m.topInset-8)+'px'; // Eight pixels above the actual projected upper edge.
  }
  svg.setAttribute('viewBox','0 0 '+m.W+' '+m.H);
  const touchBack=touchLayout(),atStart=phase==='explore'&&focus<-.965&&target<-.965;
