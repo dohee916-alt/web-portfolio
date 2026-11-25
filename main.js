@@ -110,29 +110,56 @@ if(forest){
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
   return tree;
  });
- let labelPaper=null;
+ let labelPaper=null,labelLayoutKey='';
  function placeForestLabels(paper){
   const W=scene.clientWidth,H=scene.clientHeight,margin=8;
   if(!W||!H)return;
-  if(paper)labelPaper=paper;
-  labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
+  if(paper&&Number.isFinite(paper.left))labelPaper=paper;
   const w=introPaperWidth(W,H)*1.15,h=w*9.5/7;
-  const card=paper||labelPaper||{left:(W-w)/2,right:(W+w)/2,top:(H-h)/2,bottom:(H+h)/2};
+  const card=labelPaper||{left:(W-w)/2,right:(W+w)/2,top:(H-h)/2,bottom:(H+h)/2};
+  const key=[W,H,card.left,card.right,card.top,card.bottom].map(v=>Math.round(v*2)/2).join('|');
+  if(key===labelLayoutKey)return;
+  labelLayoutKey=key;
+  labelOverlay.setAttribute('viewBox','0 0 '+W+' '+H);
   const growing=$('stillGrowing').getBoundingClientRect(),sr=scene.getBoundingClientRect();
-  const title={left:growing.left-sr.left,right:growing.right-sr.left,top:growing.top-sr.top,bottom:growing.bottom-sr.top};
+  const title={left:growing.left-sr.left,right:growing.right-sr.left,top:card.top-29,bottom:card.top-7};
+  const obstacles=[card,title],placed=[];
   trees.forEach((tree,i)=>{
-   const label=labels[i],tx=Number(tree.dataset.treeX),ty=Number(tree.dataset.treeY);
-   if(!label||!Number.isFinite(tx)||!Number.isFinite(ty))return;
-   const half=label.getComputedTextLength()/2,idealY=Math.min(H-8,ty+15);
-   const cx=v=>clamp(v,margin+half,Math.max(margin+half,W-margin-half));
-   const x0=cx(tx),over=(x,y,r)=>x+half>r.left-4&&x-half<r.right+4&&y-10<r.bottom+4&&y+3>r.top-4;
-   let x=x0,y=idealY;
-   if(over(x,y,card)||over(x,y,title)){
-    const candidates=[[card.left-half-8,y],[card.right+half+8,y],[x,card.top-8],[x,card.bottom+16]];
-    const valid=candidates.map(([a,b])=>[cx(a),clamp(b,24,H-8)]).filter(([a,b])=>!over(a,b,card)&&!over(a,b,title)).sort((a,b)=>Math.hypot(a[0]-x0,a[1]-idealY)-Math.hypot(b[0]-x0,b[1]-idealY));
-    if(valid.length){[x,y]=valid[0]}
+   const label=labels[i],bx=Number(tree.dataset.baseX),by=Number(tree.dataset.baseY),s=Number(tree.dataset.treeScale);
+   if(!label||!s||!Number.isFinite(bx)||!Number.isFinite(by))return;
+   const height=362*s,treeHalf=105*s,half=Math.max(12,label.getComputedTextLength()/2)+5,vertical=11;
+   const idealX=bx,idealY=by-height/2;
+   const minX=Math.min(W/2,margin+half),maxX=Math.max(minX,W-margin-half);
+   const minY=Math.min(H/2,60),maxY=Math.max(minY,H-vertical-8);
+   const cx=v=>clamp(v,minX,maxX),cy=v=>clamp(v,minY,maxY);
+   const xs=[idealX,treeHalf+8,W-treeHalf-8],ys=[idealY,height/2+8,H-height/2-8];
+   for(const o of [...obstacles,...placed]){
+    xs.push(o.left-half-7,o.right+half+7);
+    ys.push(o.top-vertical-7,o.bottom+vertical+7);
    }
-   label.setAttribute('x',String(x));label.setAttribute('y',String(y));
+   let best=null,bestScore=Infinity;
+   for(const xv of xs)for(const yv of ys){
+    const x=cx(xv),y=cy(yv),rect={left:x-half,right:x+half,top:y-vertical,bottom:y+vertical};
+    const intersect=o=>rect.right>o.left-5&&rect.left<o.right+5&&rect.bottom>o.top-5&&rect.top<o.bottom+5;
+    if(obstacles.some(intersect))continue;
+    const overlap=placed.some(intersect);
+    const clip=Math.max(0,treeHalf+6-x,x+treeHalf+6-W)+Math.max(0,height/2+6-y,y+height/2+6-H);
+    const displacement=Math.hypot(x-idealX,y-idealY);
+    const score=displacement+clip*1.1+(overlap?10000:0);
+    if(score<bestScore){bestScore=score;best={x,y,rect}}
+   }
+   // Tiny viewports may not fit a full name beside the stack. Prefer a free center above or below it.
+   if(!best){
+    const x=cx(idealX),above=card.top-vertical-8,below=card.bottom+vertical+8;
+    const free=[above,below].filter(y=>y>=minY&&y<=maxY);
+    const y=free.length?free.sort((a,b)=>Math.abs(a-idealY)-Math.abs(b-idealY))[0]:cy(idealY);
+    best={x,y,rect:{left:x-half,right:x+half,top:y-vertical,bottom:y+vertical}};
+   }
+   const x=best.x,y=best.y+height/2;
+   tree.setAttribute('transform','translate('+x+' '+y+') scale('+s+') translate(-96 -362)');
+   tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);
+   label.setAttribute('x',String(best.x));label.setAttribute('y',String(best.y));label.setAttribute('dominant-baseline','central');
+   placed.push(best.rect);
   });
  }
  updateForestLabels=placeForestLabels;
@@ -151,13 +178,13 @@ if(forest){
    const scale=height/362,half=height*96/362+height*.025;
    const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
    tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
-   tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);tree.querySelectorAll('.fallen-fruits image').forEach(img=>sizeCone(img,scale));
+   tree.dataset.baseX=String(x);tree.dataset.baseY=String(y);tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);tree.querySelectorAll('.fallen-fruits image').forEach(img=>sizeCone(img,scale));
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
   });
-  placeForestLabels();
+  labelPaper=null;labelLayoutKey='';placeForestLabels();
  }
  layoutForest();
- document.fonts?.ready.then(placeForestLabels);
+ document.fonts?.ready.then(()=>{labelLayoutKey='';placeForestLabels()});
  window.addEventListener('resize',layoutForest,{passive:true});
  if(typeof ResizeObserver!=='undefined')new ResizeObserver(layoutForest).observe(scene);
 }
