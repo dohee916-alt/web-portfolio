@@ -739,7 +739,7 @@ pageMedia.addEventListener('pointerup',finishPagePointer);pageMedia.addEventList
 const fullButton=$('readerFullscreen');
 let nativeReaderFullscreen=false;
 function setReaderFullscreen(active){
- fullReader=active;detail.classList.toggle('reader-fullscreen',active);document.body.classList.toggle('reader-fullscreen-active',active);
+ fullReader=active;detail.classList.remove('arrow-key-reading');detail.classList.toggle('reader-fullscreen',active);document.body.classList.toggle('reader-fullscreen-active',active);
  fullButton.setAttribute('aria-label',active?'Exit fullscreen':'View fullscreen');
  fullButton.setAttribute('aria-pressed',String(active));
  resetPageZoom();
@@ -930,7 +930,8 @@ window.addEventListener('touchend',finishIntroTouch,{passive:false});
 window.addEventListener('touchcancel',finishIntroTouch,{passive:false});
 window.addEventListener('blur',()=>{introTouch=null;drag=null});
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
-window.addEventListener('keydown',e=>{if($('contactDialog')?.open)return;if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
+window.addEventListener('pointerdown',()=>detail.classList.remove('arrow-key-reading'),true);
+window.addEventListener('keydown',e=>{if(e.key==='Tab')detail.classList.remove('arrow-key-reading');if($('contactDialog')?.open)return;if(e.key==='Escape')close();else if(detail.classList.contains('has-slides')&&['detail','opening'].includes(phase)&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();if(fullReader)detail.classList.add('arrow-key-reading');moveRaonSlide(e.key==='ArrowRight'?1:-1)}else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(['intro','animation','explore'].includes(phase)){e.preventDefault();navigate(e.key==='ArrowDown'?1:-1,'y')}}});
 // Persist only the current tab's reading position, not the rendered geometry.
 const VIEW_KEY='folio-view-v1';
 const itemKey=p=>p?String(p.id||p.year+'|'+p.title):null;
