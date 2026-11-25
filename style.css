@@ -443,8 +443,9 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 /* The supplied tree silhouettes are decorative intro scenery, not gallery cards. */
 #introForest{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .55s ease}
 #scene[data-phase=intro] #introForest{opacity:1}
-#scene[data-phase=animation] #introForest,#scene[data-phase=explore] #introForest{opacity:1}
-#scene:is([data-phase=opening],[data-phase=detail],[data-phase=closing]) #introForest{opacity:1}
+#scene[data-phase=animation] #introForest{opacity:1}
+#scene:is([data-phase=explore],[data-phase=opening],[data-phase=detail],[data-phase=closing]) #introForest{opacity:0;visibility:hidden;transition:opacity .55s ease,visibility 0s linear .55s}
+#scene[data-phase=opening].tree-route #introForest,#scene[data-phase=closing].tree-route #introForest{opacity:1;visibility:visible;transition:opacity .55s ease}
 
 /* The visible grown plant itself is part of the existing contact button hit area. */
 #contactBloom[data-growth=grown] #seedStage .sprout-stem{pointer-events:stroke;cursor:pointer;stroke-width:2.5}
@@ -456,11 +457,11 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 /* Aligned source layers share their trunk base; the grove remains scenery during transitions. */
 #introForest .project-tree{opacity:var(--tree-opacity,.5);transition:opacity .38s ease;pointer-events:none;outline:none}
 #introForest .tree-layer{transform-box:view-box;transform-origin:96px 362px;transition:transform .55s cubic-bezier(.22,.65,.3,1),opacity .35s,fill .35s;opacity:.78;pointer-events:none}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .tree-layer{pointer-events:visiblePainted;cursor:pointer}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible){opacity:1}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-layer{transform:rotate(var(--fan));fill:#91b69a;opacity:.72;transition-delay:var(--layer-delay)}
+#scene[data-phase=intro]:not(.tree-route) #introForest .tree-layer{pointer-events:visiblePainted;cursor:pointer}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible){opacity:1}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-layer{transform:rotate(var(--fan));fill:#91b69a;opacity:.72;transition-delay:var(--layer-delay)}
 #introForest .tree-label{font-family:'Maru Buri',serif;font-size:var(--label-size,14px);fill:#f4eedc;stroke:none;opacity:0;transition:opacity .28s ease;pointer-events:none}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-label{opacity:1}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree:is(:hover,:focus-visible) .tree-label{opacity:1}
 #scene.tree-route #introForest .project-tree:not(.tree-chosen){opacity:calc(var(--tree-opacity,.5)*.65)}
 #introForest .tree-chosen{opacity:1}
 #introForest .tree-chosen .tree-layer{transform:rotate(calc(var(--fan)*3)) scale(1.12);fill:#a7c6a7;opacity:0;transition:transform .65s cubic-bezier(.22,.65,.3,1),opacity .45s .25s;transition-delay:var(--layer-delay)}
@@ -473,5 +474,5 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #world,#layers,#curve{pointer-events:none}
 #scene[data-phase=explore] #layers .anchor{pointer-events:auto}
 #introForest .tree-hit{pointer-events:none;fill:transparent;stroke:none}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .tree-hit{pointer-events:all;cursor:pointer}
-#scene:is([data-phase=intro],[data-phase=explore]):not(.tree-route) #introForest .tree-layer{pointer-events:none}
+#scene[data-phase=intro]:not(.tree-route) #introForest .tree-hit{pointer-events:all;cursor:pointer}
+#scene[data-phase=intro]:not(.tree-route) #introForest .tree-layer{pointer-events:none}
