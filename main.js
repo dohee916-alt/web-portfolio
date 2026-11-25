@@ -9,6 +9,21 @@ let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,d
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text'),futureLabelPath=document.createElementNS(svgNS,'path'),futureTextPath=document.createElementNS(svgNS,'textPath');
 futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','middle');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureLabelPath.setAttribute('id','futureLabelCurve');futureLabelPath.setAttribute('fill','none');futureLabelPath.setAttribute('stroke','none');futureLabelPath.setAttribute('aria-hidden','true');futureTextPath.setAttribute('href','#futureLabelCurve');futureTextPath.setAttribute('startOffset','50%');futureTextPath.textContent='More to Unfold';futureText.append(futureTextPath);svg.append(futurePath,futureLabelPath,futureText);
+// One background silhouette per actual project; the personal journey is the central stack.
+const forest=$('introForestTrees'),forestProjects=items.filter(p=>p.category==='Project');
+if(forest){
+ const slots=[{x:135,y:456,h:280},{x:305,y:510,h:205},{x:704,y:498,h:240},{x:865,y:455,h:315}];
+ forestProjects.forEach((p,i)=>{
+  const side=slots[i]||{x:90+(i*157)%820,y:470+(i%3)*30,h:190+(i%4)*30};
+  const tree=document.createElementNS(svgNS,'use');
+  const scale=side.h/380;
+  tree.setAttribute('href','#projectTreeSilhouette');
+  tree.setAttribute('transform','translate('+(side.x-100*scale)+' '+(side.y-side.h)+') scale('+scale+')');
+  tree.setAttribute('fill','#183a29');
+  tree.setAttribute('opacity',String(i%2?.42:.56));
+  forest.append(tree);
+ });
+}
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
 function setPhase(p){phase=p;scene.dataset.phase=p;$('foldEdge').hidden=true;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
