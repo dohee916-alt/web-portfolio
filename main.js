@@ -9,20 +9,35 @@ let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,d
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text'),futureLabelPath=document.createElementNS(svgNS,'path'),futureTextPath=document.createElementNS(svgNS,'textPath');
 futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','middle');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureLabelPath.setAttribute('id','futureLabelCurve');futureLabelPath.setAttribute('fill','none');futureLabelPath.setAttribute('stroke','none');futureLabelPath.setAttribute('aria-hidden','true');futureTextPath.setAttribute('href','#futureLabelCurve');futureTextPath.setAttribute('startOffset','50%');futureTextPath.textContent='More to Unfold';futureText.append(futureTextPath);svg.append(futurePath,futureLabelPath,futureText);
-// One background silhouette per actual project; the personal journey is the central stack.
+// Fit the entire forest to the viewport, rather than cropping a fixed wide composition.
 const forest=$('introForestTrees'),forestProjects=items.filter(p=>p.category==='Project');
 if(forest){
- const slots=[{x:135,y:456,h:280},{x:305,y:510,h:205},{x:704,y:498,h:240},{x:865,y:455,h:315}];
- forestProjects.forEach((p,i)=>{
-  const side=slots[i]||{x:90+(i*157)%820,y:470+(i%3)*30,h:190+(i%4)*30};
+ const forestSvg=$('introForest');
+ const trees=forestProjects.map((p,i)=>{
   const tree=document.createElementNS(svgNS,'use');
-  const scale=side.h/380;
   tree.setAttribute('href','#projectTreeSilhouette');
-  tree.setAttribute('transform','translate('+(side.x-100*scale)+' '+(side.y-side.h)+') scale('+scale+')');
   tree.setAttribute('fill','#183a29');
   tree.setAttribute('opacity',String(i%2?.42:.56));
-  forest.append(tree);
+  forest.append(tree);return tree;
  });
+ function layoutForest(){
+  const W=scene.clientWidth,H=scene.clientHeight;
+  if(!W||!H)return;
+  forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
+  const narrow=W/H<1.18;
+  const slots=narrow?
+   [{x:.20,y:.35,h:.24},{x:.79,y:.37,h:.21},{x:.18,y:.89,h:.25},{x:.82,y:.90,h:.28}]:
+   [{x:.135,y:.76,h:.467},{x:.305,y:.85,h:.342},{x:.704,y:.83,h:.40},{x:.865,y:.758,h:.525}];
+  trees.forEach((tree,i)=>{
+   const side=slots[i]||{x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.30+(i%4)*.04};
+   const height=Math.min(H*side.h,W*(narrow?.31:.20)*380/200);
+   const scale=height/380,x=Math.max(height*100/380+8,Math.min(W-height*100/380-8,W*side.x)),y=H*side.y;
+   tree.setAttribute('transform','translate('+(x-100*scale)+' '+(y-height)+') scale('+scale+')');
+  });
+ }
+ layoutForest();
+ window.addEventListener('resize',layoutForest,{passive:true});
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(layoutForest).observe(scene);
 }
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
