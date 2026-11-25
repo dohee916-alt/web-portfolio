@@ -27,9 +27,29 @@ function showFallenFruit(){
   for(let j=group.children.length;j<count;j++){
    const slot=j%13,ring=Math.floor(j/13),angle=slot*2.399963+ring*.55;
    const x=96+Math.cos(angle)*(22+slot*3.4),y=365+Math.sin(angle)*9+ring*4;
-   const g=document.createElementNS(svgNS,'g');g.setAttribute('transform','translate('+x+' '+y+') rotate('+((j*67%140)-70)+')');
-   const img=document.createElementNS(svgNS,'image');img.setAttribute('href','./assets/spruce-cone.svg?v=bracts-v2');img.setAttribute('x','-5');img.setAttribute('y','-9');img.setAttribute('width','10');img.setAttribute('height','17');g.append(img);group.append(g);
-   if(j>=count-pending&&!reduced){img.animate([{transform:'translateY(-90px) rotate(-24deg)',opacity:0},{transform:'translateY(-75px) rotate(-12deg)',opacity:1,offset:.17},{transform:'translateY(0) rotate(0deg)',opacity:1,offset:.82},{transform:'translateY(-3px)',opacity:1,offset:.91},{transform:'translateY(0)',opacity:1}],{duration:850,delay:(j-count+pending)*100,easing:'cubic-bezier(.45,.06,.75,1)'})}
+   const turn=(j*67%140)-70;
+   const g=document.createElementNS(svgNS,'g');g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
+   const img=document.createElementNS(svgNS,'image');img.setAttribute('href','./assets/spruce-cone.svg?v=bracts-v2');img.setAttribute('x','-5');img.setAttribute('y','-9');img.setAttribute('width','10');img.setAttribute('height','17');
+   const newlyFallen=j>=count-pending&&!reduced;
+   // Each cone starts in the branches of its own tree, not above the scene.
+   // Convert the trunk-to-ground fall into the rotated cone's local coordinates.
+   const sourceX=96+Math.sin((j+1)*2.4)*29,sourceY=213+(j*37)%64;
+   const dx=sourceX-x,dy=sourceY-y,theta=turn*Math.PI/180;
+   const localX=dx*Math.cos(theta)+dy*Math.sin(theta);
+   const localY=-dx*Math.sin(theta)+dy*Math.cos(theta);
+   const start='translate('+localX+'px,'+localY+'px) rotate(-18deg)';
+   if(newlyFallen)img.style.transform=start;
+   g.append(img);group.append(g);
+   if(newlyFallen){
+    const drop=img.animate([
+     {transform:start,offset:0},
+     {transform:'translate('+localX*.52+'px,'+localY*.55+'px) rotate(12deg)',offset:.36},
+     {transform:'translate(0px,3px) rotate(-5deg)',offset:.82},
+     {transform:'translate(0px,-3px) rotate(3deg)',offset:.91},
+     {transform:'translate(0px,0px) rotate(0deg)',offset:1}
+    ],{duration:940,delay:(j-count+pending)*110,easing:'cubic-bezier(.33,.02,.33,1)',fill:'forwards'});
+    drop.onfinish=()=>{img.style.transform='';drop.cancel()};
+   }
   }
   fruitPending[key]=0;
  });
