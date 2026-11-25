@@ -623,3 +623,10 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #forestLabelOverlay .tree-label{font-family:'Maru Buri',serif;font-size:11px;fill:#f4eedc;stroke:none;opacity:0;transition:opacity .22s ease;paint-order:stroke fill;stroke:#174b36;stroke-width:1.8px;stroke-linejoin:round;filter:none}
 #forestLabelOverlay .tree-label.label-hover{opacity:1}
 
+
+/* No native rectangular touch flash; keep the existing tree-only feedback. */
+#introForest,#introForest *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree.tree-preview{opacity:1}
+#scene[data-phase=intro]:not(.tree-route) #introForest .project-tree.tree-preview .tree-layer{transform:scaleX(var(--depth-width,1));fill:#719a7b;opacity:.80;transition-delay:var(--layer-delay)}
+#introForest .fallen-fruits{opacity:1}
+#introForest .fallen-fruits image{opacity:1;filter:brightness(1.35) saturate(.85)}
