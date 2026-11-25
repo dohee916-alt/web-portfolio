@@ -289,7 +289,7 @@ header #fold.mobile-fold:focus:not(:focus-visible){outline:none}
 
 /* Maru Buri typography */
 body,button,input,select,textarea,svg text{font-family:'Maru Buri',serif}
-#stillGrowing{font-weight:400}
+#stillGrowing{font-weight:400;font-size:14px}
 .anchor b{font-weight:600}
 .anchor span{font-weight:300}
 .raon-reader-nav{font-weight:400}
