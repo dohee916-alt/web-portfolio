@@ -46,9 +46,15 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
    const bezier=(a,b,c,d,t)=>{const q=1-t;return q*q*q*a+3*q*q*t*b+3*q*t*t*c+t*t*t*d};
    const smooth=t=>t*t*(3-2*t);
    const outline=surface.querySelector('#leafOutline');
-   const bend=(t)=>{
-    const wave=Math.sin(t*Math.PI*3.2)*Math.sin(Math.PI*t)*24;
-    return 'M8 246 C95 '+(40+wave)+' 312 '+(5-wave*.7)+' 532 52 C450 '+(232-wave*.55)+' 235 '+(311+wave*.4)+' 8 246Z';
+   const restOutline=outline.getAttribute('d');
+   // Preserve the organic contour at every frame; flex the edge while retaining its tips.
+   const bend=t=>{
+    const wave=Math.sin(t*Math.PI*3.2)*Math.sin(Math.PI*t)*12;
+    let n=0,x=0;
+    return restOutline.replace(/-?\d+(?:\.\d+)?/g,v=>{
+     const value=Number(v);if(n++%2===0){x=value;return v}
+     return String(Math.round((value+wave*Math.sin(Math.PI*(x-8)/524)*Math.sin((x/524)*Math.PI*2+value*.012))*100)/100);
+    });
    };
    const steps=80;frames=[];
    for(let i=0;i<=steps;i++){
@@ -70,11 +76,11 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   }
   flight=surface.animate(frames,{duration,easing:'linear',fill:'both'});
   const active=flight;
-  active.finished.then(()=>{if(flight!==active||!dialog.open)return;dialog.classList.add('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');active.cancel();flight=null}).catch(()=>{});
+  active.finished.then(()=>{if(flight!==active||!dialog.open)return;dialog.classList.add('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');active.cancel();flight=null}).catch(()=>{});
  }
  openButton.addEventListener('click',()=>showContact());
  document.getElementById('contactClose').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C95 40 312 5 532 52 C450 232 235 311 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
+ dialog.addEventListener('close',()=>{clearCopyStatus();flight?.cancel();flight=null;dialog.classList.remove('leaf-arrived');surface.querySelector('#leafOutline')?.setAttribute('d','M8 246 C28 222 42 190 66 162 C86 137 109 125 129 107 C151 85 173 71 201 62 C226 52 249 42 278 38 C308 33 327 39 351 33 C380 29 399 37 425 38 C454 39 478 50 500 48 C513 48 525 50 532 52 C518 68 511 85 496 105 C480 123 470 142 447 157 C425 171 407 192 380 203 C354 215 330 220 305 234 C278 248 252 249 222 257 C193 265 171 259 144 263 C113 266 91 255 65 258 C42 260 25 249 8 246Z');if(grown){stage.dataset.growth='grown';inline.dataset.growth='grown';seedButton.tabIndex=0;seedButton.setAttribute('aria-label','Open contact');seedButton.setAttribute('aria-expanded','false')}});
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  for(const el of [seedButton,inline]){
   el.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.pointerType==='mouse'&&e.button===0)e.preventDefault()});
