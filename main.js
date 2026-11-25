@@ -7,8 +7,8 @@ const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
 let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
-const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text');
-futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','end');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureText.textContent='More to Unfold';svg.append(futurePath,futureText);
+const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text'),futureLabelPath=document.createElementNS(svgNS,'path'),futureTextPath=document.createElementNS(svgNS,'textPath');
+futurePath.setAttribute('fill','none');futurePath.setAttribute('stroke-dasharray','4 7');futurePath.setAttribute('stroke-linecap','round');futurePath.setAttribute('id','futureTrack');futureText.setAttribute('id','futureMessage');futureText.setAttribute('text-anchor','middle');futureText.setAttribute('stroke','none');futureText.setAttribute('fill','#f4eedc');futureLabelPath.setAttribute('id','futureLabelCurve');futureLabelPath.setAttribute('fill','none');futureLabelPath.setAttribute('stroke','none');futureLabelPath.setAttribute('aria-hidden','true');futureTextPath.setAttribute('href','#futureLabelCurve');futureTextPath.setAttribute('startOffset','50%');futureTextPath.textContent='More to Unfold';futureText.append(futureTextPath);svg.append(futurePath,futureLabelPath,futureText);
 const detail=$('detail');detail.removeAttribute('open');detail.setAttribute('aria-hidden','true');
 const touchLayout=()=>matchMedia('(pointer:coarse)').matches;
 function setPhase(p){phase=p;scene.dataset.phase=p;$('foldEdge').hidden=true;$('fold').hidden=p!=='explore'||(!touchLayout()&&(focus>-.965||target>-.965))}
@@ -275,7 +275,9 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  futurePath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y+5)+' Q '+midFuture+' '+(controlY+5)+' '+endX+' '+(endY+5):'');
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
  const seedEntry=$('contactBloom');if(seedEntry){seedEntry.hidden=!futureVisible||futureFade<.2;seedEntry.style.left=(endX-36)+'px';seedEntry.style.top=(endY+m.topInset+38)+'px';seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(1+.30*clamp((m.W-600)/1000)));}
- const futureX=midFuture;futureText.setAttribute('text-anchor','middle');futureText.setAttribute('x',String(futureX));futureText.setAttribute('y',String(trackY(futureX,m)-14));futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
+ // Letter baselines follow the same quadratic curve, 19px above the dotted track.
+ futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-14)+' Q '+midFuture+' '+(controlY-14)+' '+endX+' '+(endY-14):'');
+ futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
  const tangent=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2)*180/Math.PI;
