@@ -24,21 +24,33 @@ function showFallenFruit(){
  forest.querySelectorAll('.project-tree').forEach((tree,i)=>{
   const key=fruitId(forestProjects[i]),group=tree.querySelector('.fallen-fruits'),count=fruitCounts[key]||0,pending=fruitPending[key]||0;
   if(!group)return;
-  // Stable project-specific shuffle: each tree blooms in a different order,
-  // while previously earned cones remain in place across rerenders.
-  const bloomSites=[[94,114],[122,151],[68,160],[111,196],[51,215],[142,235],[80,249],[119,271],[65,284],[103,304],[43,268],[136,294],[91,218]];
+  // Reproducible positions per project, verified against the actual layered
+  // tree silhouettes: at least 6 of 9 cone footprint samples touch the tree.
   let seed=2166136261;
   for(const char of key){seed=Math.imul(seed^char.charCodeAt(0),16777619)>>>0}
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
-  const order=bloomSites.map((_,n)=>n);
-  for(let n=order.length-1;n>0;n--){const swap=Math.floor(random()*(n+1));[order[n],order[swap]]=[order[swap],order[n]]}
-  const phase=random()*Math.PI*2;
+  const masks=[...tree.querySelectorAll('.project-tree-layers path')];
+  const inside=(x,y)=>masks.some(path=>path.isPointInFill(new DOMPoint(x,y)));
+  const coverage=(x,y)=>{
+   let hits=0;
+   for(const dx of [-3,0,3])for(const dy of [-6,0,6])if(inside(x+dx,y+dy))hits++;
+   return hits;
+  };
+  const sites=[];
+  // Generate and remember a shuffled distribution, not the same growth order
+  // on all trees. Existing cones keep their deterministic positions on reload.
+  for(let attempt=0;attempt<500&&sites.length<72;attempt++){
+   const x=55+random()*82,y=102+random()*205;
+   if(coverage(x,y)<6)continue;
+   if(sites.some(p=>Math.hypot(p.x-x,p.y-y)<15))continue;
+   sites.push({x,y,turn:Math.round((random()-.5)*40)});
+  }
   for(let j=group.children.length;j<count;j++){
-   const slot=j%order.length,cycle=Math.floor(j/order.length),site=bloomSites[order[slot]];
-   const offset=Math.min(cycle*3.5,11);
-   const x=site[0]+Math.sin(phase+j*2.19)*offset;
-   const y=site[1]+Math.cos(phase+j*1.71)*offset*.8;
-   const turn=Math.round((random()-.5)*62);
+   const site=sites[j%sites.length]||{x:96,y:170+((j*31)%140),turn:0};
+   const cycle=Math.floor(j/Math.max(1,sites.length));
+   const x=site.x+Math.sin(j*1.83)*Math.min(cycle*2,4);
+   const y=site.y+Math.cos(j*1.49)*Math.min(cycle*2,4);
+   const turn=site.turn;
    const g=document.createElementNS(svgNS,'g');
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
    const img=document.createElementNS(svgNS,'image');
