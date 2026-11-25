@@ -23,7 +23,7 @@ if(forest){
    const layer=document.createElementNS(svgNS,custom?'image':'path');
    if(custom){layer.setAttribute('href',source);layer.setAttribute('width','192');layer.setAttribute('height','362');layer.setAttribute('preserveAspectRatio','xMidYMid meet')}
    else{layer.setAttribute('d',source);layer.setAttribute('fill','#183a29')}
-   layer.classList.add('tree-layer');layer.style.setProperty('--fan',((j-(sources.length-1)/2)*1.7)+'deg');layer.style.setProperty('--layer-delay',(j*24)+'ms');layers.append(layer);
+   layer.classList.add('tree-layer');const depth=sources.length>1?j/(sources.length-1):0;layer.style.setProperty('--depth-width',String(1-.10*depth));layer.style.setProperty('--open-width',String(1-.40*depth));layer.style.setProperty('--layer-delay',(j*24)+'ms');layers.append(layer);
   });
   const label=document.createElementNS(svgNS,'text');label.classList.add('tree-label');label.setAttribute('x','98');label.setAttribute('y','384');label.setAttribute('text-anchor','middle');label.textContent=p.title;
   const hit=document.createElementNS(svgNS,'path');hit.classList.add('tree-hit');
