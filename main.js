@@ -24,13 +24,21 @@ function showFallenFruit(){
  forest.querySelectorAll('.project-tree').forEach((tree,i)=>{
   const key=fruitId(forestProjects[i]),group=tree.querySelector('.fallen-fruits'),count=fruitCounts[key]||0,pending=fruitPending[key]||0;
   if(!group)return;
-  // Staggered points inside the spruce canopy, shared across tree variants.
+  // Stable project-specific shuffle: each tree blooms in a different order,
+  // while previously earned cones remain in place across rerenders.
   const bloomSites=[[94,114],[122,151],[68,160],[111,196],[51,215],[142,235],[80,249],[119,271],[65,284],[103,304],[43,268],[136,294],[91,218]];
+  let seed=2166136261;
+  for(const char of key){seed=Math.imul(seed^char.charCodeAt(0),16777619)>>>0}
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+  const order=bloomSites.map((_,n)=>n);
+  for(let n=order.length-1;n>0;n--){const swap=Math.floor(random()*(n+1));[order[n],order[swap]]=[order[swap],order[n]]}
+  const phase=random()*Math.PI*2;
   for(let j=group.children.length;j<count;j++){
-   const site=bloomSites[j%bloomSites.length],cycle=Math.floor(j/bloomSites.length);
-   const x=site[0]+Math.sin((j+1)*2.19)*Math.min(cycle*3,12);
-   const y=site[1]+Math.cos((j+1)*1.71)*Math.min(cycle*3,10);
-   const turn=((j*37)%62)-31;
+   const slot=j%order.length,cycle=Math.floor(j/order.length),site=bloomSites[order[slot]];
+   const offset=Math.min(cycle*3.5,11);
+   const x=site[0]+Math.sin(phase+j*2.19)*offset;
+   const y=site[1]+Math.cos(phase+j*1.71)*offset*.8;
+   const turn=Math.round((random()-.5)*62);
    const g=document.createElementNS(svgNS,'g');
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
    const img=document.createElementNS(svgNS,'image');
@@ -81,8 +89,8 @@ if(forest){
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
   // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
   const t=ease(clamp((W/H-.60)/1.05));
-  const portrait=[{x:.19,y:.74,h:.35,alpha:.66},{x:.32,y:.31,h:.22,alpha:.30},{x:.83,y:.51,h:.27,alpha:.47},{x:.73,y:.92,h:.24,alpha:.39}];
-  const landscape=[{x:.14,y:.84,h:.62,alpha:.66},{x:.29,y:.51,h:.35,alpha:.30},{x:.84,y:.64,h:.43,alpha:.47},{x:.72,y:.91,h:.34,alpha:.39}];
+  const portrait=[{x:.19,y:.74,h:.35,alpha:.80},{x:.32,y:.31,h:.22,alpha:.80},{x:.83,y:.51,h:.27,alpha:.80},{x:.73,y:.92,h:.24,alpha:.80}];
+  const landscape=[{x:.14,y:.84,h:.62,alpha:.80},{x:.29,y:.51,h:.35,alpha:.80},{x:.84,y:.64,h:.43,alpha:.80},{x:.72,y:.91,h:.34,alpha:.80}];
   trees.forEach((tree,i)=>{
    const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38};
    const p=portrait[i]||fallback,l=landscape[i]||fallback;
