@@ -5,6 +5,9 @@ if(!(window.PROJECTS||[]).some(p=>p&&p.enabled!==false)){
 const $=id=>document.getElementById(id),scene=$('scene'),root=$('layers'),items=(window.PROJECTS||[]).filter(p=>p&&p.enabled!==false),dialog=$('detail');
 const N=items.length, S=32, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), mix=(a,b,t)=>a+(b-a)*t, ease=t=>{t=clamp(t);return t*t*(3-2*t)}, reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile=()=>matchMedia('(pointer:coarse), (max-width:600px)').matches;
+const forestCompact=(W,H)=>Math.max(ease(clamp((980-W)/340)),ease(clamp((1.28-W/Math.max(1,H))/.48)));
+const introPaperWidth=(W,H)=>mix(Math.min(185,W*.43),Math.min(155,W*.31,H*.24),forestCompact(W,H));
+function sizeCone(img,s){const w=Math.max(12,10/Math.max(.12,s||.5)),h=w*1.6;img.setAttribute('x',String(-w/2));img.setAttribute('y',String(-h/2));img.setAttribute('width',String(w));img.setAttribute('height',String(h))}
 let treeReturn=null,treeOpening=false;let phase='intro',startAt=0,focus=Math.floor((N-1)/2),target=focus,hover=false,drag=null,blockClick=0,selected=-1,openedAt=0,closingAt=0,last=performance.now(),lift=[], poses=[];
 const cards=[],anchors=[],visited=new Set(),svg=$('curve'),path=svg.querySelector('path');
 const svgNS='http://www.w3.org/2000/svg',futurePath=document.createElementNS(svgNS,'path'),futureText=document.createElementNS(svgNS,'text'),futureLabelPath=document.createElementNS(svgNS,'path'),futureTextPath=document.createElementNS(svgNS,'textPath');
@@ -50,8 +53,7 @@ function showFallenFruit(){
    g.setAttribute('transform','translate('+x+' '+y+') rotate('+turn+')');
    const img=document.createElementNS(svgNS,'image');
    img.setAttribute('href','./assets/spruce-cone.svg?v=earth-brown-1');
-   img.setAttribute('x','-6');img.setAttribute('y','-9.6');
-   img.setAttribute('width','12');img.setAttribute('height','19.2');
+   sizeCone(img,Number(tree.dataset.treeScale));
    g.append(img);group.append(g);
    const fresh=j>=count-pending&&!reduced;
    if(fresh){
@@ -81,7 +83,7 @@ let updateForestLabels=()=>{};
 if(forest){
  const forestSvg=$('introForest');
  const labelOverlay=document.createElementNS(svgNS,'svg');labelOverlay.id='forestLabelOverlay';labelOverlay.setAttribute('aria-hidden','true');scene.append(labelOverlay);
- const labels=[];
+ const labels=[];scene.addEventListener('pointerdown',e=>{if(e.target.closest('.project-tree'))return;forest.querySelectorAll('.tree-preview').forEach(t=>t.classList.remove('tree-preview'));labels.forEach(l=>l.classList.remove('label-hover'))},true);
  const trees=forestProjects.map((p,i)=>{
   const tree=document.createElementNS(svgNS,'g');
   tree.classList.add('project-tree');tree.setAttribute('role','button');tree.setAttribute('tabindex','0');tree.setAttribute('aria-label',p.title);
@@ -97,9 +99,13 @@ if(forest){
   const label=document.createElementNS(svgNS,'text');label.classList.add('tree-label');label.setAttribute('x','98');label.setAttribute('y','384');label.setAttribute('text-anchor','middle');label.textContent=p.title;
   const hit=document.createElementNS(svgNS,'path');hit.classList.add('tree-hit');
   hit.setAttribute('d','M96 0 L124 70 L155 135 L181 210 L200 325 L140 350 L110 362 L83 362 L50 350 L-8 325 L12 210 L38 135 L68 70Z');
-  const fruits=document.createElementNS(svgNS,'g');fruits.classList.add('fallen-fruits');fruits.setAttribute('aria-hidden','true');tree.append(layers,fruits,hit);forest.append(tree);labelOverlay.append(label);labels.push(label);tree.addEventListener('pointerenter',()=>label.classList.add('label-hover'));tree.addEventListener('pointerleave',()=>label.classList.remove('label-hover'));tree.addEventListener('focus',()=>label.classList.add('label-hover'));tree.addEventListener('blur',()=>label.classList.remove('label-hover'));
+  const fruits=document.createElementNS(svgNS,'g');fruits.classList.add('fallen-fruits');fruits.setAttribute('aria-hidden','true');tree.append(layers,fruits,hit);forest.append(tree);labelOverlay.append(label);labels.push(label);tree.addEventListener('pointerenter',()=>label.classList.add('label-hover'));tree.addEventListener('pointerleave',()=>{if(!tree.classList.contains('tree-preview'))label.classList.remove('label-hover')});tree.addEventListener('focus',()=>label.classList.add('label-hover'));tree.addEventListener('blur',()=>label.classList.remove('label-hover'));
   const activate=e=>{e.stopPropagation();if(phase==='intro'||phase==='explore')openFromTree(items.indexOf(p),tree)};
-  tree.addEventListener('click',activate);tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}});
+  let holdTimer=0,held=false,downX=0,downY=0;
+  const clearHold=()=>{clearTimeout(holdTimer);holdTimer=0};
+  tree.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;held=false;downX=e.clientX;downY=e.clientY;clearHold();holdTimer=setTimeout(()=>{if(phase!=='intro')return;held=true;forest.querySelectorAll('.tree-preview').forEach(t=>t.classList.remove('tree-preview'));labels.forEach(l=>l.classList.remove('label-hover'));tree.classList.add('tree-preview');label.classList.add('label-hover')},380)});
+  tree.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>12)clearHold()});tree.addEventListener('pointerup',clearHold);tree.addEventListener('pointercancel',clearHold);tree.addEventListener('contextmenu',e=>e.preventDefault());
+  tree.addEventListener('click',e=>{if(held){held=false;e.stopPropagation();return}tree.classList.remove('tree-preview');activate(e)});tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}});
   for(const event of ['pointerdown','touchstart','touchend','touchmove'])tree.addEventListener(event,e=>e.stopPropagation(),{passive:true});
   return tree;
  });
@@ -122,16 +128,21 @@ if(forest){
   forestSvg.setAttribute('viewBox','0 0 '+W+' '+H);
   // Continuous interpolation between two asymmetric compositions, no breakpoint jump.
   const t=ease(clamp((W/H-.60)/1.05));
-  const portrait=[{x:.19,y:.74,h:.35,alpha:.80},{x:.32,y:.31,h:.22,alpha:.80},{x:.83,y:.51,h:.27,alpha:.80},{x:.73,y:.92,h:.24,alpha:.80}];
+  const portrait=[{x:.18,y:.78,h:.28,alpha:.80},{x:.25,y:.34,h:.23,alpha:.80},{x:.82,y:.51,h:.25,alpha:.80},{x:.77,y:.92,h:.24,alpha:.80}];
   const landscape=[{x:.14,y:.84,h:.62,alpha:.80},{x:.29,y:.51,h:.35,alpha:.80},{x:.84,y:.64,h:.43,alpha:.80},{x:.72,y:.91,h:.34,alpha:.80}];
   trees.forEach((tree,i)=>{
    const fallback={x:.09+((i*157)%820)/1000,y:.78+(i%3)*.05,h:.26+(i%4)*.04,alpha:.38};
    const p=portrait[i]||fallback,l=landscape[i]||fallback;
-   const height=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192);
+   const k=forestCompact(W,H),stackHalf=introPaperWidth(W,H)*1.15/2;
+   const sideRoom=W/2-stackHalf-22;
+   const baseHeight=Math.min(H*mix(p.h,l.h,t),W*mix(.35,.29,t)*362/192);
+   const compactHeight=Math.min(H*p.h,Math.max(48,sideRoom)*362/192);
+   const height=mix(baseHeight,compactHeight,k);
    const scale=height/362,half=height*96/362+height*.025;
-   const x=clamp(W*mix(p.x,l.x,t),half+8,W-half-8),y=H*mix(p.y,l.y,t);
+   const left=i===0||i===1,sideX=left?Math.min(W*p.x,W/2-stackHalf-half-12):Math.max(W*p.x,W/2+stackHalf+half+12);
+   const x=clamp(mix(W*mix(p.x,l.x,t),sideX,k),half+8,W-half-8),y=clamp(H*mix(mix(p.y,l.y,t),p.y,k),height+48,H-25);
    tree.setAttribute('transform','translate('+x+' '+y+') scale('+scale+') translate(-96 -362)');
-   tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);
+   tree.dataset.treeX=String(x);tree.dataset.treeY=String(y);tree.dataset.treeScale=String(scale);tree.querySelectorAll('.fallen-fruits image').forEach(img=>sizeCone(img,scale));
    tree.style.setProperty('--tree-opacity',String(mix(p.alpha,l.alpha,t)));tree.style.setProperty('--label-size',String(11/scale)+'px');
   });
   placeForestLabels();
@@ -242,7 +253,7 @@ scene.addEventListener('click',e=>{if(treeReturn||e.target.closest('.project-tre
 function measure(){
  const r=root.getBoundingClientRect(),s=scene.getBoundingClientRect(),W=r.width,V=s.height;
  // Fixed intro paper size; shrink only to fit a small viewport.
- const w=Math.min(185,W*.43); // Never resize the intro stack based on viewport aspect ratio or height.
+ const w=introPaperWidth(W,V); // Preserve desktop size; reserve side space on compact viewports.
  // Layout is determined by the available viewport, not the input device.
  const compact=Math.max(ease(clamp((1.45-W/Math.max(1,V))/.65)),ease(clamp((850-W)/350)));
  const galleryW=Math.min(260,W*.43,Math.max(185,W*.19)); // Monotonic width; compact layout changes spacing, not paper size.
@@ -411,7 +422,7 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  futurePath.style.opacity=String(futureFade*.72);futureText.style.opacity=String(futureVisible?futureFade:0);
  const seedEntry=$('contactBloom');if(seedEntry){
   const seedScale=1+.30*clamp((m.W-600)/1000);
-  const seedRight=endX-36;
+  const seedRight=endX-(m.W<=650?6:36);
   // SVG is 120x95 for a 240x190 viewBox. Its transformed centerline
   // is 15px left of the entry right edge, and its 84% pivot is 35px below entry top.
   // The bud center (120,31) is 64.3 CSS px above that pivot at scale 1.
@@ -423,7 +434,9 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
   seedEntry.style.opacity=String(futureFade);seedEntry.style.setProperty('--seed-scale',String(seedScale));
  }
  // Letter baselines follow the same quadratic curve, 10px above the dotted track.
- futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+midFuture+' '+(controlY-5)+' '+endX+' '+(endY-5):'');
+ const labelEnd=m.W<=650?Math.max(startX+12,endX-56):endX,labelMid=(startX+labelEnd)/2,labelEndY=trackY(labelEnd,m),labelControl=2*trackY(labelMid,m)-(a1.y+labelEndY)/2;
+ futureLabelPath.setAttribute('d',futureVisible?'M '+startX+' '+(a1.y-5)+' Q '+labelMid+' '+(labelControl-5)+' '+labelEnd+' '+(labelEndY-5):'');
+ futureTextPath.setAttribute('startOffset',m.W<=650?'50%':'54%');
  futureText.setAttribute('font-size','11');futureText.setAttribute('letter-spacing','.35');
  const back=$('fold'),br=root.getBoundingClientRect();
  back.hidden=touchBack?phase!=='explore':!atStart;back.classList.toggle('mobile-fold',touchBack);back.style.left=touchBack?'50%':(br.left+ba.x)+'px';back.style.top=touchBack?'auto':(br.top+ba.y+5)+'px';
