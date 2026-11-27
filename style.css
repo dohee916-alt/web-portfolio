@@ -696,3 +696,13 @@ body.reader-fullscreen-active header{visibility:hidden!important}
 #contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-shell{filter:brightness(1.12) drop-shadow(0 0 4px #efe4b4a0)}
 @keyframes seed-ambient{0%,100%{opacity:.48}50%{opacity:.67}}
 @media(prefers-reduced-motion:reduce){#seedStage[data-growth=seed] .seed-halo{animation:none!important}}
+
+/* Suppress native touch paint consistently, including dynamically created controls.
+   Keep actual keyboard focus, intentional hover/press feedback, and email selection. */
+html,body,body *{-webkit-tap-highlight-color:transparent}
+button,a,[role="button"],#scene,#scene *,#detail .raon-reader-media,#detail .raon-reader-media *,#contactLeafSurface svg,#contactLeafSurface svg *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#contactLeafSurface #contactEmail{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+:where(button,a,[role="button"],[tabindex],dialog):focus:not(:focus-visible){outline:none}
+@media (pointer:coarse){
+ button:focus-visible,.layer:focus-visible,#layers .layer:focus-visible,#fold:focus-visible,#detail.raon-mode #close:focus-visible,#detail.raon-mode button:focus-visible{outline-color:var(--gallery-ivory,#f4eedc)}
+}
