@@ -715,3 +715,13 @@ header #fold:not(.mobile-fold) svg,header #foldEdge svg{visibility:hidden}
 #contactDialog #contactLeafSurface #contactClose{position:absolute;right:-5px;top:calc(17.33% - 36px);width:44px;height:44px;display:grid;place-items:center;padding:0;margin:0;line-height:1;font-size:23px;color:var(--gallery-ivory,#f4eedc);z-index:3;opacity:0;pointer-events:none;transition:opacity .18s ease}
 #contactDialog.leaf-arrived #contactLeafSurface #contactClose{opacity:1;pointer-events:auto}
 @media(prefers-reduced-motion:reduce){#contactDialog #contactLeafSurface #contactClose{transition:none}}
+
+/* Mobile leaf typography: preserve the desktop hierarchy, with email as the focal point. */
+@media(max-width:650px){
+ #contactLeafSurface .contact-copy{gap:8px;max-width:84%;transform:translateY(-10px)}
+ #contactLeafSurface .contact-copy .contact-kicker{font-size:clamp(8px,2.35vw,10px);top:0}
+ #contactLeafSurface .contact-copy h2{font-size:clamp(15px,4.7vw,22px);letter-spacing:-.025em}
+ #contactLeafSurface #contactCopyStatus{font-size:clamp(8px,2.15vw,9px);top:calc(100% + 5px)}
+}
+/* Anchor to the actual leaf tip (532,52) in its 540x300 viewBox. */
+#contactDialog #contactLeafSurface #contactClose{right:0;top:calc(17.33% - 36px);transform:translateX(2px)}
