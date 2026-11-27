@@ -46,7 +46,7 @@ const CONTACT = { email: "dohee916@gmail.com", links: [] };
   try{if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');await navigator.clipboard.writeText(CONTACT.email);copied=true}
   catch(err){try{copied=fallbackCopy()}catch(e){}}
   if(copied){copiedEmail=true;saveGrowth()}
-  if(attempt===copyAttempt&&dialog.open)announceCopy(copied?'Email copied to clipboard.':'Unable to copy. Please copy manually.');
+  if(attempt===copyAttempt&&dialog.open)announceCopy(copied?(window.FOLION_UI?.copied||'Email copied to clipboard.'):(window.FOLION_UI?.failed||'Unable to copy. Please copy manually.'));
  });
  function showContact(source=null){
   if(dialog.open)return;
