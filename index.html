@@ -134,4 +134,35 @@
 <div class="contact-copy"><p class="contact-kicker">Contact</p><h2 id="contactTitle"><button type="button" id="contactEmail" aria-label="Copy email address: dohee916@gmail.com">dohee916@gmail.com</button></h2><p id="contactCopyStatus" role="status" aria-live="polite"></p></div>
 </div>
 </dialog>
-<script src="./contact.js?v=seven-stage-bloom"></script><script src="./projects.js?v=raon-4k-20261125"></script><script src="./tree-layers.js?v=source-masks-8"></script><script src="./main.js?v=reader-dialog-focus-fix"></script></body></html>
+<script>
+/* Localize only the selected interface labels; keep project content unchanged. */
+(()=>{
+ const messages={
+ en:['More to Unfold','Contact','Still growing...','Email copied to clipboard.','Unable to copy. Please copy manually.'],
+ ko:['아직 펼칠 이야기가 더 있어','연락하기','아직 자라는 중...','이메일 주소가 복사되었어요.','복사하지 못했어요. 직접 복사해 주세요.'],
+ it:['Ancora da svelare','Contatti','Ancora in crescita...','Indirizzo email copiato.','Copia non riuscita. Copia manualmente.'],
+ fr:['Encore à découvrir','Contact','Toujours en croissance...','Adresse e-mail copiée.','Échec de la copie. Copiez manuellement.'],
+ de:['Noch mehr zu entdecken','Kontakt','Noch am Wachsen...','E-Mail-Adresse kopiert.','Kopieren fehlgeschlagen. Bitte manuell kopieren.'],
+ es:['Más por descubrir','Contacto','Sigo creciendo...','Correo electrónico copiado.','No se pudo copiar. Copia manualmente.'],
+ pt:['Mais por descobrir','Contato','Ainda crescendo...','Endereço de e-mail copiado.','Não foi possível copiar. Copie manualmente.'],
+ ja:['まだ広がる物語','お問い合わせ','まだ成長中…','メールアドレスをコピーしました。','コピーできませんでした。手動でコピーしてください。'],
+ 'zh-Hans':['更多精彩待展开','联系','仍在成长…','邮箱地址已复制。','复制失败，请手动复制。'],
+ 'zh-Hant':['更多精彩待展開','聯絡','仍在成長…','電子郵件地址已複製。','複製失敗，請手動複製。'],
+ ru:['Ещё многое впереди','Контакты','Всё ещё расту…','Адрес электронной почты скопирован.','Не удалось скопировать. Скопируйте вручную.']
+ };
+ const locale=(navigator.language||'en').toLowerCase();
+ const key=locale.startsWith('zh')?(/hant|-(tw|hk|mo)(-|$)/.test(locale)?'zh-Hant':'zh-Hans'):locale.split('-')[0];
+ const lang=messages[key]?key:'en';
+ const [more,contact,growing,copied,failed]=messages[lang];
+ window.FOLION_UI={more,contact,growing,copied,failed,lang};
+ const family={'ja':'Noto Serif JP','zh-Hans':'Noto Serif SC','zh-Hant':'Noto Serif TC','ru':'Noto Serif'}[lang];
+ if(family){
+ const link=document.createElement('link');link.rel='stylesheet';link.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(family).replace(/%20/g,'+')+':wght@400;600&display=swap';document.head.append(link);
+ }
+ const stack="'Maru Buri',"+(family?"'"+family+"',":"")+"serif";
+ window.FOLION_UI.font=stack;
+ for(const [selector,value] of [['#contactOpen',contact],['.contact-kicker',contact],['#stillGrowing',growing],['#contactCopyStatus',null]]){
+ document.querySelectorAll(selector).forEach(el=>{if(value!==null)el.textContent=value;el.lang=lang;el.style.fontFamily=stack;});
+ }
+})();
+</script><script src="./contact.js?v=localized-labels"></script><script src="./projects.js?v=raon-4k-20261125"></script><script src="./tree-layers.js?v=source-masks-8"></script><script src="./main.js?v=localized-labels"></script></body></html>
