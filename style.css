@@ -710,3 +710,8 @@ button,a,[role="button"],#scene,#scene *,#detail .raon-reader-media,#detail .rao
 /* The timeline paints its own connected chevron; retain the existing invisible return hit targets. */
 #curve>path:first-child{stroke-linecap:round;stroke-linejoin:round}
 header #fold:not(.mobile-fold) svg,header #foldEdge svg{visibility:hidden}
+
+/* Close control follows the leaf's upper-right tip rather than the viewport. */
+#contactDialog #contactLeafSurface #contactClose{position:absolute;right:-5px;top:calc(17.33% - 36px);width:44px;height:44px;display:grid;place-items:center;padding:0;margin:0;line-height:1;font-size:23px;color:var(--gallery-ivory,#f4eedc);z-index:3;opacity:0;pointer-events:none;transition:opacity .18s ease}
+#contactDialog.leaf-arrived #contactLeafSurface #contactClose{opacity:1;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){#contactDialog #contactLeafSurface #contactClose{transition:none}}
