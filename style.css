@@ -679,28 +679,20 @@ body.reader-fullscreen-active header{visibility:hidden!important}
 #seedStage[data-bloom="3"] #flowerExtension{stroke-dashoffset:.46}
 #seedStage[data-bloom="4"] #flowerExtension{stroke-dashoffset:.22}
 
-/* Seed material study: quiet satin translucency, localized light, no floating glitter.
-   Scoped to the seed; all growth transforms and timings remain intact. */
-#seedStage #seedShellInk stop:nth-child(1){stop-color:#eee6cf}
-#seedStage #seedShellInk stop:nth-child(2){stop-color:#b8ac8b}
-#seedStage #seedShellInk stop:nth-child(3){stop-color:#514d3b}
-#seedStage #seedShellInner stop:nth-child(1){stop-color:#e4dfc8}
-#seedStage #seedShellInner stop:nth-child(2){stop-color:#b8af92}
-#seedStage #seedShellInner stop:nth-child(3){stop-color:#817960}
-#seedStage .seed-shell>path:first-child{stroke:#e1d9bd;stroke-width:.26;stroke-opacity:.48}
-#seedStage .seed-shell>path:nth-child(2){opacity:.48}
-#seedStage .seed-shell>path:nth-child(3){stroke:#575440;stroke-width:.38;stroke-opacity:.38}
-#seedStage .seed-shell>path:nth-child(4){stroke:#fff5da;stroke-width:.62;stroke-opacity:.42}
-#seedStage #seedGlow stop:nth-child(1){stop-color:#c7dec2;stop-opacity:.42}
-#seedStage #seedGlow stop:nth-child(2){stop-color:#b4cfb2;stop-opacity:.12}
-#seedStage #seedCoreGlow stop:nth-child(1){stop-color:#e9e6c8;stop-opacity:.58}
-#seedStage #seedCoreGlow stop:nth-child(2){stop-color:#d6ddbc;stop-opacity:.22}
-#seedStage #seedCoreGlow stop:nth-child(3){stop-color:#c3d5b6;stop-opacity:.04}
-#seedStage[data-growth=seed] .seed-halo{opacity:.12;transform:scale(.72,.56)}
-#seedStage[data-growth=seed] .seed-core-halo{opacity:.12;transform:scale(.74,.82)}
-#seedStage[data-growth=seed] .seed-sparks,
-#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-sparks{opacity:0;visibility:hidden}
-#seedStage[data-growth=seed] .seed-shell{filter:drop-shadow(0 1px 1.2px #002b2170)}
-#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-halo{opacity:.42;transform:scale(.92,.72)}
-#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-core-halo{opacity:.48;transform:scale(.87,.96)}
-#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-shell{filter:brightness(1.16) drop-shadow(0 0 2px #e6e8c753) drop-shadow(0 1px 2px #002b2170)}
+
+/* Seed invitation: ambient forest light at rest, concentrated warm light on hover.
+   Preserve the original shell illustration and all growth geometry. */
+#seedStage #seedGlow stop:nth-child(1){stop-color:#e5dfb4;stop-opacity:.68}
+#seedStage #seedGlow stop:nth-child(2){stop-color:#b8cd9d;stop-opacity:.25}
+#seedStage #seedCoreGlow stop:nth-child(1){stop-color:#fff1c9;stop-opacity:.85}
+#seedStage #seedCoreGlow stop:nth-child(2){stop-color:#e4dfb3;stop-opacity:.45}
+#seedStage #seedCoreGlow stop:nth-child(3){stop-color:#bbce9e;stop-opacity:.11}
+#seedStage[data-growth=seed] .seed-halo{opacity:.57;transform:scale(.96,.90);animation:seed-ambient 5s ease-in-out infinite}
+#seedStage[data-growth=seed] .seed-core-halo{opacity:.47;transform:scale(.92)}
+#seedStage[data-growth=seed] .seed-shell{filter:drop-shadow(0 0 2px #e2d9ad80)}
+#seedStage[data-growth=seed] .seed-sparks,#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-sparks{visibility:hidden;opacity:0}
+#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-halo{animation:none;opacity:1;transform:scale(1.19,1.12)}
+#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-core-halo{opacity:.94;transform:scale(1.13)}
+#contactSeed:is(:hover,:focus-visible) #seedStage[data-growth=seed] .seed-shell{filter:brightness(1.12) drop-shadow(0 0 4px #efe4b4a0)}
+@keyframes seed-ambient{0%,100%{opacity:.48}50%{opacity:.67}}
+@media(prefers-reduced-motion:reduce){#seedStage[data-growth=seed] .seed-halo{animation:none!important}}
