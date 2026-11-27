@@ -360,7 +360,9 @@ function trackY(x,m){
 }
 function anchorAt(i,m,f=focus){
  const effective=f<0?f*mix(.85,.38,m.compact):f;
- const x=m.W*.5+(i-effective)*m.trackStep;
+ // At the final stop, leave a longer continuation on narrow portrait screens.
+ const tailShift=m.W<=650?Math.min(42,m.W*.095)*ease(clamp(f-(N-2))):0;
+ const x=m.W*.5+(i-effective)*m.trackStep-tailShift;
  return {x,y:trackY(x,m)};
 }
 function backAt(m){
