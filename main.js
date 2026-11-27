@@ -558,7 +558,7 @@ function enterTransition(){
  if(phase==='intro'||phase==='explore'){setPhase('animation');cards.forEach(o=>o.card.disabled=true);$('nav').hidden=true}
  scene.classList.remove('intro-card-hover');
 }
-function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus;autoUnfold=true;unfoldTarget=1;$('hint').textContent=''}
+function start(){if(phase!=='intro')return;enterTransition();clearIntroControl();target=focus=returnFocus=-1;autoUnfold=true;unfoldTarget=1;$('hint').textContent=''}
 function navigate(delta,axis='y'){
  if(returning||phase==='animation')return;
  if(!delta||!['intro','explore'].includes(phase))return;
@@ -569,7 +569,7 @@ function navigate(delta,axis='y'){
  if(phase==='explore'){if(delta>=0)return;enterTransition();clearIntroControl();autoUnfold=false;unfoldTarget=0;returning=true;return}
  if(phase==='intro'){if(delta<=0)return;start();return}
 }
-function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=Math.floor((N-1)/2);autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
+function reset(){introTouch=null;clearIntroControl();returning=false;gate=false;launchLocked=false;unfold=unfoldTarget=0;returnFocus=-1;autoUnfold=false;velocity=0;wheelAt=0;scrollSpeed=0;lastWheel=0;selected=-1;impactPose=null;impactAnchor=null;detail.classList.remove('visible','morphing','content-ready');detail.setAttribute('aria-hidden','true');setPhase('intro');scene.classList.remove('intro-card-hover');cards.forEach((o,i)=>o.card.disabled=i!==0);$('eyebrow').textContent='01 / LAYERS';$('headline').textContent='지금의 나를 이루기까지';$('hint').textContent=mobile()?'터치하여 레이어를 펼치세요.':'클릭하여 레이어를 펼치세요.';$('nav').hidden=true;hover=false;target=focus=Math.floor((N-1)/2);lift.fill(0)}
 
 let projectPages=[],readerTitle='';
 function pagesFor(p){return Array.isArray(p.pages)?p.pages.filter(v=>typeof v==='string'&&v.trim()).map(v=>v.trim()):[]}
