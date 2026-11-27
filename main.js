@@ -509,7 +509,13 @@ function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(elapse
  const ba=backAt(m),a0=atStart?ba:anchorAt(0,m),a1=anchorAt(N-1,m);
  // Exact quadratic between the same track coordinates used by the anchors.
  const midX=(a0.x+a1.x)/2,midY=2*trackY(midX,m)-(a0.y+a1.y)/2;
- path.setAttribute('d','M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5));
+ const trackD='M '+a0.x+' '+(a0.y+5)+' Q '+midX+' '+(midY+5)+' '+a1.x+' '+(a1.y+5);
+ // Draw the chevron at the exact curve endpoint in the same SVG coordinate space.
+ const angle=Math.atan2(trackY(ba.x+1,m)-trackY(ba.x-1,m),2);
+ const ux=Math.cos(angle),uy=Math.sin(angle),vx=-uy,vy=ux;
+ const tipX=ba.x,tipY=ba.y+5,arm=10*19/28,spread=6*19/28;
+ const wing=(sign)=>(tipX+ux*arm+sign*vx*spread)+' '+(tipY+uy*arm+sign*vy*spread);
+ path.setAttribute('d',atStart?'M '+wing(-1)+' L '+tipX+' '+tipY+' L '+wing(1)+' '+trackD:trackD);
  const futureFade=phase==='explore'?clamp((focus-(N-1.65))/.65):0;
  const endX=m.W-Math.min(12,m.W*.035),startX=a1.x,midFuture=(startX+endX)/2;
  const endY=trackY(endX,m),controlY=2*trackY(midFuture,m)-(a1.y+endY)/2;
