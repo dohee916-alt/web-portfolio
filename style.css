@@ -319,8 +319,8 @@ header #contactOpen:hover{text-decoration:underline;text-underline-offset:5px}
 #seedStage[data-growth=watering] .water-drop{animation:seed-rain .72s ease-in both}
 #seedStage[data-growth=watering] .water-drop:nth-child(2){animation-delay:.12s}
 #seedStage[data-growth=watering] .water-drop:nth-child(3){animation-delay:.24s}
-#seedStage:is([data-growth=watering],[data-growth=grown]) .seed-left{transform:translate(-7px,3px) rotate(-19deg);opacity:.55}
-#seedStage:is([data-growth=watering],[data-growth=grown]) .seed-right{transform:translate(7px,3px) rotate(19deg);opacity:.55}
+#seedStage:is([data-growth=watering],[data-growth=grown]) .seed-left{transform:translate(-3px,1px) rotate(-12deg);opacity:.55}
+#seedStage:is([data-growth=watering],[data-growth=grown]) .seed-right{transform:translate(3px,1px) rotate(12deg);opacity:.55}
 #seedStage:is([data-growth=watering],[data-growth=grown]) .sprout-stem{stroke-dashoffset:0}
 #seedStage:is([data-growth=watering],[data-growth=grown]) .sprout-leaf{opacity:1;transform:scale(1)}
 @keyframes seed-rain{0%{opacity:0;transform:translateY(-24px)}18%{opacity:.9}82%{opacity:.75}100%{opacity:0;transform:translateY(69px)}}
@@ -673,3 +673,8 @@ body.reader-fullscreen-active header{visibility:hidden!important}
 #scene[data-phase=opening] #curve,#scene[data-phase=detail] #curve,#scene[data-phase=closing] #curve{opacity:0;transition:opacity .25s ease}
 #scene[data-phase=opening] #layers .anchor:not(.picked),#scene[data-phase=detail] #layers .anchor:not(.picked),#scene[data-phase=closing] #layers .anchor:not(.picked){opacity:0;transition:opacity .25s ease}
 #scene[data-phase=explore] #curve,#scene[data-phase=explore] #layers .anchor:not(.picked){transition:opacity .25s ease}
+
+/* Keep the growing stalk in contact with the moving flower base at every stage. */
+#seedStage[data-bloom="2"] #flowerExtension{stroke-dashoffset:.70}
+#seedStage[data-bloom="3"] #flowerExtension{stroke-dashoffset:.46}
+#seedStage[data-bloom="4"] #flowerExtension{stroke-dashoffset:.22}
