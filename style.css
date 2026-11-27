@@ -706,3 +706,7 @@ button,a,[role="button"],#scene,#scene *,#detail .raon-reader-media,#detail .rao
 @media (pointer:coarse){
  button:focus-visible,.layer:focus-visible,#layers .layer:focus-visible,#fold:focus-visible,#detail.raon-mode #close:focus-visible,#detail.raon-mode button:focus-visible{outline-color:var(--gallery-ivory,#f4eedc)}
 }
+
+/* The timeline paints its own connected chevron; retain the existing invisible return hit targets. */
+#curve>path:first-child{stroke-linecap:round;stroke-linejoin:round}
+header #fold:not(.mobile-fold) svg,header #foldEdge svg{visibility:hidden}
